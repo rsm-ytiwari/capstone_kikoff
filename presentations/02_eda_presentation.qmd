@@ -421,36 +421,46 @@ plt.show()
 
 ## The Critical Alignment Requirement
 
-The spend data contains **15 SOURCE_GROUP values** from your operational data system. Your business operates across **12-13 marketing channels**. We need to align these taxonomies before Phase 2 modeling.
+The spend data contains **15 SOURCE_GROUP values** from your operational data system.
+
+Your business operates across **12-13 marketing channels**.
+
+We need to align these taxonomies before Phase 2 modeling.
+
+---
+
+## Current SOURCE_GROUP Values
 
 ```{python}
 source_groups = spend_df.groupby('SOURCE_GROUP')['TOTAL_SPEND'].sum().sort_values(ascending=False).reset_index()
 
 mapping_template = pd.DataFrame({
     'SOURCE_GROUP': source_groups['SOURCE_GROUP'].values,
-    'best_guess': ['Meta', 'Google/Search', 'TikTok', 'Mobile DSP', 'Others',
+    'Best Guess': ['Meta', 'Google/Search', 'TikTok', 'Mobile DSP', 'Others',
                    'Mobile DSP', 'Linear TV', 'CTV', 'Audio/Podcast', 'Apple Search',
                    'Mobile DSP?', 'DSP?', 'Influencers', 'Bing Search?', 'DSP?'],
-    'confidence': ['High', 'Low', 'High', 'Low', 'Medium', 'Low', 'High', 'High',
+    'Confidence': ['High', 'Low', 'High', 'Low', 'Medium', 'Low', 'High', 'High',
                    'Low', 'High', 'Low', 'Low', 'Medium', 'Low', 'Low']
 })
 
-print("SOURCE_GROUP to Channel Mapping: Requires Your Input")
 print(mapping_template.to_string(index=False))
 ```
+
+---
+
+## Spend Distribution by SOURCE_GROUP
 
 ```{python}
 source_groups_sorted = spend_df.groupby('SOURCE_GROUP')['TOTAL_SPEND'].sum().sort_values(ascending=True)
 
-fig, ax = plt.subplots(figsize=(10, 7))
+fig, ax = plt.subplots(figsize=(12, 8))
 bars = ax.barh(range(len(source_groups_sorted)), source_groups_sorted.values, color='steelblue', alpha=0.8)
 ax.set_yticks(range(len(source_groups_sorted)))
-ax.set_yticklabels(source_groups_sorted.index)
+ax.set_yticklabels(source_groups_sorted.index, fontsize=10)
 for i, (idx, val) in enumerate(source_groups_sorted.items()):
     ax.text(val, i, f'  ${val/1e6:.1f}M', va='center', fontsize=9)
-ax.set_title('Spend Distribution Across SOURCE_GROUP Values', fontsize=13, fontweight='bold')
-ax.set_xlabel('Total Spend ($)')
-ax.text(0.5, -0.08, 'Context for mapping decisions', transform=ax.transAxes, fontsize=9, ha='center', style='italic')
+ax.set_title('Spend by Channel (for mapping context)', fontsize=13, fontweight='bold')
+ax.set_xlabel('Total Spend ($)', fontsize=11)
 plt.tight_layout()
 plt.show()
 ```

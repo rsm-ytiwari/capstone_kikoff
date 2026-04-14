@@ -168,7 +168,7 @@ Data Science Team
 <section>
 <section id="data-setup" class="title-slide slide level1 center">
 <h1>Data Setup</h1>
-<div id="d94a5133" class="cell" data-execution_count="1">
+<div id="9ead677e" class="cell" data-execution_count="1">
 <div class="cell-output cell-output-stdout">
 <pre><code>Data loaded: Spend (11506 rows), LTV (828 rows), Combined (828 days)</code></pre>
 </div>
@@ -184,7 +184,7 @@ Data Science Team
 </section>
 <section id="high-level-findings" class="slide level2">
 <h2>High-Level Findings</h2>
-<div id="30f40515" class="cell" data-execution_count="2">
+<div id="8d701ae5" class="cell" data-execution_count="2">
 <div class="cell-output cell-output-stdout">
 <pre><code>KEY INSIGHTS FROM DATA EXPLORATION
 
@@ -222,7 +222,7 @@ Data Science Team
 </section>
 <section id="daily-spend-trends" class="slide level2">
 <h2>Daily Spend Trends</h2>
-<div id="26165fad" class="cell" data-execution_count="3">
+<div id="519f7772" class="cell" data-execution_count="3">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -234,7 +234,7 @@ Data Science Team
 </section>
 <section id="channel-composition-over-time" class="slide level2">
 <h2>Channel Composition Over Time</h2>
-<div id="2410c13a" class="cell" data-execution_count="4">
+<div id="70171065" class="cell" data-execution_count="4">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -246,7 +246,7 @@ Data Science Team
 </section>
 <section id="top-channels-by-total-spend" class="slide level2">
 <h2>Top Channels by Total Spend</h2>
-<div id="025bba3d" class="cell" data-execution_count="5">
+<div id="bfadf62e" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -266,7 +266,7 @@ Data Science Team
 </section>
 <section id="daily-conversions-and-seasonality" class="slide level2">
 <h2>Daily Conversions and Seasonality</h2>
-<div id="fd5a6c00" class="cell" data-execution_count="6">
+<div id="5766ac1b" class="cell" data-execution_count="6">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -278,7 +278,7 @@ Data Science Team
 </section>
 <section id="ltv-per-conversion-arpu-trends" class="slide level2">
 <h2>LTV Per Conversion (ARPU) Trends</h2>
-<div id="2e5b4793" class="cell" data-execution_count="7">
+<div id="5138ba72" class="cell" data-execution_count="7">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -290,7 +290,7 @@ Data Science Team
 </section>
 <section id="revenue-signal-strength" class="slide level2">
 <h2>Revenue Signal Strength</h2>
-<div id="318bbabf" class="cell" data-execution_count="8">
+<div id="414b9d37" class="cell" data-execution_count="8">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -302,7 +302,7 @@ Data Science Team
 </section>
 <section id="data-quality-identified-issues" class="slide level2">
 <h2>Data Quality: Identified Issues</h2>
-<div id="dcd50cb4" class="cell" data-execution_count="9">
+<div id="76b0d7fa" class="cell" data-execution_count="9">
 <div class="cell-output cell-output-stdout">
 <pre><code>LTV Data Quality
   Null values: 2 dates
@@ -324,7 +324,7 @@ Spend Data Quality
 <section id="lagged-correlation-analysis" class="slide level2">
 <h2>Lagged Correlation Analysis</h2>
 <p>The optimal lag identifies the typical timeframe for advertising effects to materialize in conversions. This analysis motivates the adstock transformation used in the model.</p>
-<div id="5ef1fa47" class="cell" data-execution_count="10">
+<div id="f87d39b9" class="cell" data-execution_count="10">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -344,7 +344,7 @@ Spend Data Quality
 </section>
 <section id="month-of-year-patterns" class="slide level2">
 <h2>Month-of-Year Patterns</h2>
-<div id="b1de0b80" class="cell" data-execution_count="11">
+<div id="f88aa5db" class="cell" data-execution_count="11">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -356,7 +356,7 @@ Spend Data Quality
 </section>
 <section id="day-of-week-patterns" class="slide level2">
 <h2>Day-of-Week Patterns</h2>
-<div id="21fc9823" class="cell" data-execution_count="12">
+<div id="981e2dca" class="cell" data-execution_count="12">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -422,7 +422,7 @@ Spend Data Quality
 </section>
 <section id="icac-estimates-by-channel-and-platform" class="slide level2">
 <h2>iCAC Estimates by Channel and Platform</h2>
-<div id="b4dab5a0" class="cell" data-execution_count="13">
+<div id="4944e060" class="cell" data-execution_count="13">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
@@ -442,11 +442,15 @@ Spend Data Quality
 </section>
 <section id="the-critical-alignment-requirement" class="slide level2">
 <h2>The Critical Alignment Requirement</h2>
-<p>The spend data contains <strong>15 SOURCE_GROUP values</strong> from your operational data system. Your business operates across <strong>12-13 marketing channels</strong>. We need to align these taxonomies before Phase 2 modeling.</p>
-<div id="aa690b2a" class="cell" data-execution_count="14">
+<p>The spend data contains <strong>15 SOURCE_GROUP values</strong> from your operational data system.</p>
+<p>Your business operates across <strong>12-13 marketing channels</strong>.</p>
+<p>We need to align these taxonomies before Phase 2 modeling.</p>
+</section>
+<section id="current-source_group-values" class="slide level2">
+<h2>Current SOURCE_GROUP Values</h2>
+<div id="bd409553" class="cell" data-execution_count="14">
 <div class="cell-output cell-output-stdout">
-<pre><code>SOURCE_GROUP to Channel Mapping: Requires Your Input
-SOURCE_GROUP    best_guess confidence
+<pre><code>SOURCE_GROUP    Best Guess Confidence
     facebook          Meta       High
       tiktok Google/Search        Low
       google        TikTok       High
@@ -464,11 +468,14 @@ apple_search           CTV       High
   Stackadapt          DSP?        Low</code></pre>
 </div>
 </div>
-<div id="da980a73" class="cell" data-execution_count="15">
+</section>
+<section id="spend-distribution-by-source_group" class="slide level2">
+<h2>Spend Distribution by SOURCE_GROUP</h2>
+<div id="601cbc22" class="cell" data-execution_count="15">
 <div class="cell-output cell-output-display">
 <div>
 <figure>
-<p><img data-src="02_eda_presentation_files/figure-revealjs/cell-16-output-1.png" width="945" height="669"></p>
+<p><img data-src="02_eda_presentation_files/figure-revealjs/cell-16-output-1.png" width="1137" height="759"></p>
 </figure>
 </div>
 </div>
