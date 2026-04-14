@@ -16,6 +16,7 @@ format:
     height: 800
     center: false
     hash: false
+    embed-resources: true
 execute:
   echo: false
   warning: false
