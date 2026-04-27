@@ -22,6 +22,17 @@ build/
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
+# Marimo session cache
+__marimo__/
+
+# Obsidian vault config
+.obsidian/
+
+# Draft/legacy files
+Claude-setup.md
+Untitled.md
+Untitled 1.md
+
 # IDE
 .vscode/
 .idea/

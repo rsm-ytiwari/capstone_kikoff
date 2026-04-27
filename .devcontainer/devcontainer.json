@@ -4,7 +4,7 @@
     "docker-compose-k8s.yml"
   ],
   "service": "rsm-msba",
-  "workspaceFolder": "/home/jovyan/MSBA/Quarters/Spring_2026/capstone",
+  "workspaceFolder": "/home/jovyan/MSBA/02_PROJECTS/Portfolio_website",
   "remoteUser": "jovyan",
   "overrideCommand": false,
   "shutdownAction": "none",
