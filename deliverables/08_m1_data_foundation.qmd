@@ -1,0 +1,236 @@
+---
+title: "Phase 1: Data Foundation"
+subtitle: "Kikoff Marketing Mix Model"
+date: 2026-04-28
+author: "Data Science Team"
+format:
+  revealjs:
+    slide-number: true
+    theme: default
+    transition: none
+    width: 1200
+    height: 800
+    center: false
+    embed-resources: true
+    execute:
+      echo: false
+      warning: false
+---
+
+## We're building two parallel models to answer Kikoff's budget allocation question {.smaller}
+
+**Marketing Mix Modeling (MMM):** attributes conversions and revenue to each channel, controlling for seasonality and ad carryover effects.
+
+::: {.columns}
+::: {.column width="50%"}
+**Conversion model**
+
+- *Question:* How many customers per channel?
+- *Data:* Daily conversion count
+- *Role:* **Primary** — directly observed
+- *Use:* iCAC, budget allocation anchor
+:::
+::: {.column width="50%"}
+**Revenue model**
+
+- *Question:* How valuable were those customers?
+- *Data:* Daily cohort LTV (Kikoff's 1-year predicted revenue)
+- *Role:* **Directional / supplementary**
+- *Use:* Channel quality check
+:::
+:::
+
+## Channels that look equal on conversions can differ sharply on customer value
+
+**Why conversion counts alone are insufficient:**
+
+- A volume DSP drives more signups — but those customers churn quickly → lower LTV
+- Meta drives fewer signups — but customers stay longer and engage more → higher LTV
+- A single conversion model treats these as equivalent → wrong budget recommendation
+
+**What the revenue model adds:**
+
+The quality dimension. Meta's lower conversion volume becomes the right recommendation once you see it drives higher-value customers.
+
+## How we use both models — and what to do if they disagree {.smaller}
+
+| | Conversion Model | Revenue Model |
+|---|---|---|
+| Primary use | iCAC, budget allocation | Channel quality check |
+| Reliability | **High** — directly observed | Moderate — Kikoff's LTV model is the source |
+| Recent cohorts | Stable | Noisier (less behavioral data) |
+| If they agree | Strong signal | High confidence |
+| **If they diverge** | **Flag it to Kikoff** | **Divergence = informative finding** |
+
+**Important caveats:**
+
+- LTV_1YEAR is Kikoff's own prediction, not a direct observation — our MMM inherits any biases in it
+- When the two models disagree on a channel, we surface the conflict rather than averaging it away
+
+---
+
+## 639 days of clean data — Q3 2024 through March 2026
+
+![](../outputs/P1_02_eda/figures/conversions_and_revenue.png){.r-stretch}
+
+- **Q3 2024 start:** channel-level spend is complete from this point (earlier quarters have gaps)
+- **March 2026 end:** April is a partial month at export time
+- **0 null LTV values** across the full 639-day modeling window
+
+---
+
+## Top 3 channels — Meta, TikTok, Google — account for 73% of total spend
+
+![](../outputs/P1_02_eda/figures/top_10_channels_spend.png){.r-stretch}
+
+**$112.9M total spend** · $132.5K daily average · 13 channels in scope
+
+## Channel grouping decisions — and why "Others" is no longer a concern {.smaller}
+
+| Decision | Result | Why |
+|---|---|---|
+| StackAdapt + Appvertiser → `dsp_combined` | One combined DSP channel | Both are programmatic buyers (Abheek's direction) |
+| Bing → dropped | Excluded | Kikoff no longer advertising there |
+| Others → resolved | 9.2% → ~0.0% of spend | Data engineering removed 942 erroneous rows |
+
+**Why the Others resolution matters:** In the original file, Others peaked at 16.3% of modeling-window spend — large enough to absorb attribution that should go to real channels. With the updated file, Others = $33.9K (~0.0%). Every dollar is now tied to a trackable channel.
+
+![](../outputs/P1_02_eda/figures/channel_composition_monthly.png){fig-align="center" width="90%"}
+
+---
+
+## Platform label corrections — two confirmed, one open {.smaller}
+
+**The raw spend file had three inconsistent platform labels:**
+
+| Raw label | → Clean label | Basis |
+|---|---|---|
+| `iso` | → `ios` | Consistent typo |
+| `web and app` | → `web` | Abheek confirmed, Meeting 3 |
+| `iOS and android` | → 50/50 iOS / Android | ⚠️ **Open — awaiting Kikoff confirmation** |
+
+::: {style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 0.5em 1em; margin-top: 0.5em;"}
+**Open item:** iOS/Android 50/50 split is unconfirmed. Does not affect channel-level totals — only the platform-level breakdown within mobile.
+:::
+
+## Four days had artificially suppressed LTV — not real business behavior {.smaller}
+
+**What happened:** LTV_1YEAR gets revised as early customer signals arrive. If data is exported before the revision, some days show artificially low LTV — not a real drop in customer value, just a timing artifact.
+
+| Window | Dates | In modeling window? | Action |
+|---|---|---|---|
+| Window 1 | Feb 29 – Mar 11, 2024 | **No** | Documented only |
+| Window 2 | Oct 21 – Oct 24, 2025 | **Yes** | **Fixed** |
+
+**Why it matters:** Without a fix, the model would try to explain the artificial dip using marketing spend from those days — incorrectly penalizing or crediting channels for a data artifact.
+
+## Choosing the right imputation method {.smaller}
+
+| Method | Why it falls short |
+|---|---|
+| Linear interpolation | Straight-line assumption — misses day-of-week seasonality |
+| Forward fill | Copies last value; biases if LTV is trending |
+| Backward fill | Same problem in reverse |
+| Global mean | Ignores seasonal structure (October ≠ January) |
+| Boundary averaging *(current approach)* | Simple and valid; less robust if boundary days are also elevated |
+| **Local trend — rolling median *(selected)*** | Draws from 14 surrounding days; robust to adjacent outliers; adapts to seasonality |
+
+**Key principle:** Detection threshold is 3σ — only 0.3% chance of occurring naturally. Imputation is surgical, not a broad smoothing operation.
+
+## The fix worked — post-imputation variation is within normal range
+
+![](../outputs/P1_02_eda/figures/ltv_anomaly_spot_check.png){.r-stretch}
+
+| | Before fix | After fix |
+|---|---|---|
+| Z-score (deviation from local context) | 2.81 — anomalous | **0.85 — normal range ✓** |
+| Gate status | — | **PASS** |
+
+---
+
+## Spend and conversions move together — confirming the model has signal to learn from
+
+![](../outputs/P1_02_eda/figures/spend_vs_conversions_scatter.png){.r-stretch}
+
+**Sanity check before modeling:** If spend and conversions were uncorrelated, the MMM would have nothing to learn from. r = 0.445 confirms a real, positive relationship. Imperfect correlation is expected — seasonality and brand effects add noise that the MMM separates out.
+
+**639 days · 24 channel-platform columns · 0 null LTV values**
+
+## Tax season demand is real — and modeled separately from channel effects
+
+![](../outputs/P1_02_eda/figures/monthly_seasonality.png){.r-stretch}
+
+**April peaks at ~1.5× above December's trough — a consistent spring lift, likely anchored by tax season.** This is calendar-driven demand, not a channel effect. We model it explicitly so channel contributions reflect true incremental impact — not seasonal calendar lift.
+
+---
+
+## Four holdout tests anchor our Bayesian priors — one treated as high uncertainty {.smaller}
+
+**A Bayesian prior** is a starting assumption the model holds before seeing data. Holdout experiments give us data-backed priors rather than guesses.
+
+::: {.columns}
+::: {.column width="45%"}
+**Tests used:**
+
+| Channel | Test period | Type | Confidence |
+|---|---|---|---|
+| TikTok | Aug–Sep 2025 | Holdout | High |
+| Meta | May 2025 | Holdout | High |
+| CTV | Oct–Nov 2025 | Geo holdout | Moderate |
+| Meta | Jan 2026 | Holdout | ⚠️ Low |
+
+Priors are **time-limited to test windows only.**
+
+⚠️ *Jan 2026 Meta test cancelled after 3 days — cell design flaw caused a conversion volume drop. Results are directionally valid but treated as wide, diffuse priors (high uncertainty).*
+:::
+::: {.column width="55%"}
+**iCAC from each test:**
+
+| Channel | Platform | iCAC ($) |
+|---|---|---|
+| TikTok | iOS | 108.83 |
+| TikTok | Android | 81.68 |
+| TikTok | Web | 112.12 |
+| Meta (May 2025) | iOS | 135.48 |
+| Meta (May 2025) | Android | 63.06 |
+| Meta (May 2025) | Web | 156.89 |
+| CTV | All | 135.00 |
+| Meta (Jan 2026) ⚠️ | iOS | 1,350.00 |
+| Meta (Jan 2026) ⚠️ | Android | 154.52 |
+| Meta (Jan 2026) ⚠️ | Web | 239.75 |
+:::
+:::
+
+---
+
+## All 5 data quality checks passed — one open assumption remaining {.smaller}
+
+| Check | Result |
+|---|---|
+| LTV anomaly imputation (Oct 21–24, 2025) | ✓ PASS — z-score = 0.85 after fix |
+| Platform label normalization | ✓ PASS |
+| Channel taxonomy mapping | ✓ PASS |
+| DSP combined coverage | ✓ PASS — 341 days in window |
+| Modeling window filter | ✓ PASS — 2024-07-01 to 2026-03-31 |
+
+**One open item:** iOS/Android 50/50 split — not yet confirmed by Kikoff. Does not block the model build.
+
+## Phase 2: Incorporating experimental evidence into the model {.smaller}
+
+**The core challenge:** The TikTok, Meta, and CTV holdout tests each ran for 9–28 days within a 639-day history. How do we make the model use that experimental evidence *only for the period it covers* — without assuming it applies to all 18 months?
+
+**Three mechanisms evaluated:**
+
+| Approach | Plain English | Our assessment |
+|---|---|---|
+| Time-varying effectiveness | Allow channel effectiveness to drift over time as a smooth curve | **Not viable** — curve is shared across all channels; destroys per-channel precision |
+| Indicator-gated priors | Binary switch: tight, experiment-anchored assumption during test window; loose assumption outside | Most precise; requires fully custom code; fallback if timeline distinction is challenged |
+| **Native lift test API** *(starting point)* | Add holdout results as calibration constraints on the spend-outcome curve, per channel | **Starting here** — battle-tested, documented, per-channel |
+
+**Why we're starting with the native API:** It incorporates experimental evidence in a principled way without custom code risk. We'll verify post-fit that the holdout results are actually influencing the model — if not, we move to indicator-gated priors.
+
+**After that:** Run the model → generate iCAC + response curves per channel × platform → decisioning layer. Full channel coverage targeted by early June.
+
+---
+
+*Phase 1 Data Foundation | Kikoff Marketing Mix Model | 2026-04-28*

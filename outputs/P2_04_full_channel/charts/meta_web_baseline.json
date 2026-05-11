@@ -1,0 +1,20 @@
+{
+  "channel": "meta_web",
+  "model": "Model 2 (y=LTV_3YEAR)",
+  "last_updated": "2026-05-11",
+  "icac_mean": 955.55,
+  "icac_hdi_lo": 294.04,
+  "icac_hdi_hi": 1688.0,
+  "iroas_mean": 0.3219,
+  "iroas_hdi_lo": 0.0761,
+  "iroas_hdi_hi": 0.557,
+  "iroas_below_breakeven_pct": 100.0,
+  "avg_ltv": 208.12,
+  "median_weekly_spend": 331860.0,
+  "rhat_max": 1.009,
+  "ess_min": 463.4,
+  "baseline_pct": 55.5,
+  "northbeam_iroas_ref": 1.79,
+  "northbeam_icac_ref": 274.0,
+  "lift_test_benchmark": 156.89
+}

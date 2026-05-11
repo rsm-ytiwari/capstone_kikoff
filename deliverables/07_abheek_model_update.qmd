@@ -1,0 +1,191 @@
+---
+title: "Marketing Mix Model"
+subtitle: "Phase 2 Update — April 28, 2026"
+author: "Data Science Team"
+format:
+  revealjs:
+    slide-number: true
+    theme: default
+    transition: none
+    width: 1400
+    height: 900
+    margin: 0.06
+    center: true
+    hash: false
+    code-overflow: wrap
+    scrollable: false
+    css: custom-reveal.css
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Marketing Mix Model
+
+**Phase 2 Progress Review | April 28, 2026**
+
+---
+
+## Today
+
+1. Data foundation confirmed
+2. Channel landscape and incrementality benchmarks
+3. Model structure built — Meta proof-of-concept
+4. Three questions to finalize the full model next week
+
+---
+
+## Data Foundation
+
+| Metric | Value |
+|---|---|
+| Modeling window | **Q3 2024 – March 2026** |
+| Total historical spend | **$112.9M** |
+| Daily average spend | $132.5K |
+| Mean daily conversions | **2,560** |
+| Peak daily conversions | 4,354 (May 30, 2025) |
+| Tax-season lift | ~2.4× rest-of-year |
+| Spend–conversion correlation | r = 0.45 (same-day) |
+| Corrected data files | Received 2026-04-27 ✓ |
+
+*Modeling window rationale: pre-Q3 2024 spend has channel-level gaps being resolved by data engineering.*
+
+---
+
+## Channel Landscape
+
+::: columns
+::: {.column width="48%"}
+
+![](../outputs/P1_02_eda/figures/top_10_channels_spend.png){width="100%"}
+
+:::
+::: {.column width="52%"}
+
+| Channel | Share | Treatment |
+|---|---|---|
+| Meta | 37% | iOS / Android / Web |
+| TikTok | 21% | iOS / Android / Web |
+| Google Search | 16% | iOS / Android / Web |
+| Linear TV | 7% | Separate |
+| Applovin | 5% | Separate |
+| CTV | 5% | Separate |
+| Apple Search Ads | 4% | Separate |
+| Podcast | 3% | Separate |
+| DSPs (Liftoff, InMobi) | 2% | Grouped |
+| **Idle / Others** | — | *Excluded — data artifact* |
+
+:::
+:::
+
+---
+
+## Incrementality Benchmarks
+
+*These are our ground-truth anchors for how much each channel truly drives customer acquisition.*
+
+| Test | Period | Platform | iCAC | Confidence |
+|---|---|---|---|---|
+| **Meta — May 2025** | 9 days | iOS | **$135** | High — 12% holdout |
+| **Meta — May 2025** | 9 days | Android | **$63** | High — 12% holdout |
+| **Meta — May 2025** | 9 days | Web | **$157** | High — 12% holdout |
+| TikTok — Aug/Sep 2025 | 6 weeks | iOS | $109 | Moderate |
+| TikTok — Aug/Sep 2025 | 6 weeks | Android | $82 | Moderate |
+| TikTok — Aug/Sep 2025 | 6 weeks | Web | $112 | Moderate |
+| CTV — Oct/Nov 2025 | 4 weeks | All | $135 | Moderate |
+| Meta — Jan 2026 | 5 days (cancelled) | Android | $155 | Low — included with wider CI |
+| Meta — Jan 2026 | 5 days (cancelled) | Web | $240 | Low — included with wider CI |
+| Meta — Jan 2026 | 5 days (cancelled) | iOS | — | *Excluded — result anomalous ($1,350 vs $135 in May)* |
+
+**iCAC** = spend per customer acquired *incrementally* (customers we would not have gotten without that channel).
+
+---
+
+## Meta Model — What We Built
+
+**Framework:** PyMC-Marketing (Bayesian MMM)
+
+The model learns how spend in each channel translates to 1-year cohort LTV, accounting for:
+
+- **Carryover effects** — ads influence behavior days after initial exposure
+- **Diminishing returns** — doubling spend does not double customers
+- **Seasonality** — the tax-season lift (January–April) is modeled explicitly
+
+**What we've done:**
+
+- Model specified for Meta iOS, Android, and Web (3 channels × 603 days)
+- Model structure validated — prior predictive checks confirm the expected shapes
+- Full model training runs this week once data questions are resolved
+
+---
+
+## ROAS Response Curves — Meta
+
+![](../outputs/P2_01_pymc/figures/roas_response_curves.png){width="100%"}
+
+*Dashed line = each channel's 52-week median weekly spend (current operating point). Shaded band = 80% uncertainty interval. Downward slope = diminishing returns.*
+
+---
+
+## What the Curves Tell Us
+
+| Channel | 52-wk Median Spend | Shape Reading |
+|---|---|---|
+| Meta iOS | $58K/wk | Moderate returns at current spend; clear saturation zone visible |
+| Meta Android | $117K/wk | In diminishing-returns zone; incremental return declining |
+| Meta Web | $332K/wk | Highest spend; notable saturation; every additional dollar returns less |
+
+**Why the uncertainty band is wide:** At this stage we're using the model's prior structure — the bands narrow significantly once we run full model training with the incrementality tests incorporated as data-informed priors. That's the version we deliver next week.
+
+---
+
+## Three Questions to Finalize the Full Model
+
+::: columns
+::: {.column width="50%"}
+
+**1. LTV file update**
+New file shows uniformly higher LTV values. Same 1-year definition, or updated LTV model?
+*Determines: how we label ROAS outputs*
+
+**2. Decision timeline**
+When do you next use budget allocation outputs for an actual spend decision?
+*Determines: precision bar — directional vs. committed spend confidence*
+
+:::
+::: {.column width="50%"}
+
+**3. Channel continuity**
+Any new channels planned for Q2/Q3 2026? Is CTV still active after the Oct–Nov test?
+*Determines: model scope for the planning horizon*
+
+:::
+:::
+
+---
+
+## Next Steps
+
+::: columns
+::: {.column width="50%"}
+
+**This week:**
+
+- Re-run full model training on corrected data files
+- Incorporate today's answers into model specification
+- Begin TikTok and CTV channel models
+
+:::
+::: {.column width="50%"}
+
+**Next week:**
+
+- All channels modeled with calibrated priors
+- Channel-by-channel ROAS and iCAC curves
+- Spend scenario analysis (e.g., shift 10% Meta → TikTok)
+
+:::
+:::
+
+**Target:** Full channel model results by end of next week.

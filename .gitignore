@@ -52,3 +52,7 @@ Thumbs.db
 .quarto/
 _freeze/
 _cache/
+
+# Dashboard chart outputs (tracked for Streamlit — override *.csv rule above)
+!outputs/P2_04_full_channel/charts/*.csv
+!outputs/P2_04_full_channel/charts/*.json

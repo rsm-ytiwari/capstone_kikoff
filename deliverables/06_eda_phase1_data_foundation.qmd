@@ -1,0 +1,229 @@
+---
+title: "Phase 1: Data Foundation"
+subtitle: "Kikoff Marketing Mix Model — EDA Summary"
+date: 2026-04-28
+author: "Data Science Team"
+format:
+  revealjs:
+    slide-number: true
+    chalkboard: false
+    preview-links: auto
+    theme: default
+    transition: none
+    width: 1200
+    height: 800
+    center: false
+    hash: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Overview
+
+**Purpose:** Confirm the data foundation going into Phase 2 model build, and document what changed in the updated files received 2026-04-27.
+
+**Audience:** Kikoff team
+
+## Agenda
+
+1. Key numbers at a glance
+2. Spend patterns
+3. Conversions & LTV
+4. Spend-conversion relationship and seasonality
+5. Incrementality test results
+6. **What changed in the updated data files** ← new
+7. Data quality — open items only
+8. Immediate next steps
+
+---
+
+# Key Numbers at a Glance
+
+| Metric | Value |
+|---|---|
+| Modeling window | Q3 2024 – March 2026 |
+| Total spend (full history) | $112.9M |
+| Daily average spend | $132.5K |
+| Mean daily conversions | 2,560 |
+| Peak daily conversions | 4,354 (2025-05-30) |
+| Top 3 channels | Meta (37%), TikTok (21%), Google (16%) |
+| Same-day spend–conversion correlation | r = 0.445 |
+| Best carryover lag | 1 day (r = 0.428) |
+| Tax season lift | ~2.4× rest-of-year baseline |
+| Channels with incrementality priors | 3 (Meta, TikTok, CTV) |
+
+---
+
+# Spend Patterns
+
+## Total Daily Spend Over Time
+
+![](../outputs/P1_02_eda/figures/total_daily_spend.png)
+
+## Channel Composition Over Time
+
+![](../outputs/P1_02_eda/figures/channel_composition_monthly.png)
+
+::: {.notes}
+Dashed vertical line marks start of modeling window (Q3 2024). Others (dark red) was flagged in the original data at 9.2% of spend; resolved to ~0.0% in the updated file received 2026-04-27.
+:::
+
+## Top Channels by Total Spend
+
+![](../outputs/P1_02_eda/figures/top_10_channels_spend.png)
+
+---
+
+# Conversions & LTV
+
+## Daily Conversions Over Time
+
+![](../outputs/P1_02_eda/figures/daily_conversions.png)
+
+Red dots = statistical outliers (>3σ) — genuine peak-demand days, not errors.
+
+## Daily Cohort LTV Over Time
+
+![](../outputs/P1_02_eda/figures/ltv_per_conversion.png)
+
+`LTV_1YEAR` is the **total 1-year revenue of all customers acquired that day** — an aggregate. Mean ≈ $293.7K/day at ~2,560 conversions/day implies ~$115 per acquired customer in the updated file.
+
+## Modeling Window: Conversions + Revenue
+
+![](../outputs/P1_02_eda/figures/conversions_and_revenue.png)
+
+---
+
+# Spend-Conversion Relationship & Seasonality
+
+## Same-Day Scatter (Modeling Window Q3 2024 – Mar 2026)
+
+![](../outputs/P1_02_eda/figures/spend_vs_conversions_scatter.png)
+
+## Lag Analysis
+
+![](../outputs/P1_02_eda/figures/spend_conversion_lag.png)
+
+**Reading the chart:** Same-day correlation (r = 0.445) is strongest but partly driven by shared seasonality. Best carryover lag = 1 day (r = 0.428), with a secondary cluster at 5–7 days — this is the adstock signal. Adstock values are model outputs, not inputs.
+
+## Month-of-Year Seasonality
+
+![](../outputs/P1_02_eda/figures/monthly_seasonality.png)
+
+Tax season (Jan–Apr) averages ~2.4× above rest-of-year baseline. Modeled explicitly so channel effects aren't confounded by calendar demand.
+
+---
+
+# Incrementality Tests
+
+## Tests Available — 3 Usable Priors
+
+| Channel | Period | Type | Use in Model |
+|---------|--------|------|--------------|
+| TikTok | Aug 22 – Sep 15, 2025 | Holdout | Clean — used as prior |
+| Meta | May 6 – May 14, 2025 | Holdout (ended early) | Usable — used as prior |
+| Meta | Jan 3 – Jan 8, 2026 | Holdout (cancelled) | Wider CI prior |
+| CTV | Oct 6 – Nov 2, 2025 | Geo holdout | Clean — used as prior |
+
+All priors are **time-limited** — active only within test window dates, not across full model history.
+
+## iCAC by Channel + Platform
+
+| Channel | Platform | iCAC ($) |
+|---------|----------|----------|
+| TikTok | iOS | 108.83 |
+| TikTok | Android | 81.68 |
+| TikTok | Web | 112.12 |
+| Meta (May 2025) | iOS | 135.48 |
+| Meta (May 2025) | Android | 63.06 |
+| Meta (May 2025) | Web | 156.89 |
+| CTV | All | 135.00 |
+
+iCAC = incremental customer acquisition cost from each holdout. These anchor each tested channel's prior distribution.
+
+---
+
+# What Changed in the Updated Data
+
+*Files received 2026-04-27 to replace original 2026-04-07 files*
+
+## Spend File: Row-Level Changes
+
+| Period | Original | Updated | Delta | What happened |
+|---|---|---|---|---|
+| 2023 | 0 | 320 | **+320** | Full 2023 now included |
+| 2024 | 1,448 | 1,429 | −19 | Minor cleanup |
+| 2025 | 7,940 | 7,171 | **−769** | Data quality cleanup |
+| 2026 | 2,118 | 2,266 | +148 | New coverage through Apr 27 |
+| **Total** | **11,506** | **11,186** | **−320** | |
+
+**Net effect on modeling window (Q3 2024+):** −640 rows. All 15 channels still present — no channel was dropped entirely.
+
+## Others / Idle — Effectively Resolved in New File
+
+The Others issue flagged in the original data is **resolved by the data engineering update**:
+
+| | Original file | Updated file |
+|---|---|---|
+| Others spend (Q3 2024+) | $11,956,257 | $33,863 |
+| Others % of window spend | **9.2%** (peaked at 16.3%) | **~0.0%** |
+
+942 Others combos were removed; remaining $33.9K is negligible. The cleaned rows were either reclassified into proper channels or removed as erroneous entries. Others is no longer a modeling concern.
+
+**Other top changes in the modeling window** (1,035 combos removed, 395 added):
+
+| Channel | Combos removed | Combos added |
+|---|---|---|
+| facebook | 42 | 60 |
+| appvertiser | 28 | 0 |
+| liftoff | 15 | 40 |
+| applovin | 0 | 60 |
+| tiktok | 0 | 60 |
+| google | 0 | 49 |
+
+## Data Note: 2023-06 and 2023-07 Missing
+
+June and July 2023 have **no rows in either spend file** — this is a genuine data gap, not a chart error. The channel composition chart correctly shows no bars for those two months. Pre-2024 data is outside the modeling window and does not affect the model.
+
+## LTV File: Value and Coverage Changes
+
+| | Original (2026-04-07) | Updated (2026-04-27) |
+|---|---|---|
+| Row count | 1,193 | 1,213 (+20) |
+| Coverage | 2023-01-01 – 2026-04-07 | 2023-01-01 – 2026-04-27 |
+| Mean LTV_1YEAR (2024+) | $185,515 | $293,686 |
+| **Uplift factor** | — | **1.58× higher** |
+| Null LTV dates | 2 (2024-03-09, 2024-03-10) | **0** |
+
+The 1.58× LTV uplift is expected — Abheek confirmed updated values would be "more inflated." The 2 previously null dates are now populated. LTV anomaly windows (2024-02-29–03-11, 2025-10-21–24) still require imputation — method confirmed.
+
+---
+
+# Data Quality — Open Items
+
+Resolved in the new data file (no longer blocking):
+
+- ~~Others / Idle anomalous share~~ — **Resolved.** Others reduced from 9.2% → ~0.0% of modeling window spend
+
+Remaining open items:
+
+| # | Issue | Status |
+|---|---|---|
+| 1 | **Time-limited prior mechanism** | Requirement confirmed; implementation approach being finalized |
+| 2 | **LTV anomaly imputation** | Two windows (2024-02-29–03-11, 2025-10-21–24) — method confirmed, not yet applied |
+| 3 | **Platform normalization** | Transformations defined — applied in preprocessing |
+
+---
+
+# Immediate Next Steps
+
+1. Apply platform normalization + LTV imputation in preprocessing
+2. Stand up PyMC-Marketing model on Q3 2024+ slice with corrected data
+3. Finalize time-limited prior implementation mechanism
+4. First POC: ICAC + iROAS curves for Meta — Web
+
+---
+
+*Phase 1 Data Foundation | Kikoff Marketing Mix Modeling | 2026-04-28*

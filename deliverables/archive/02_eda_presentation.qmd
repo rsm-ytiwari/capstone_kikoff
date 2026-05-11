@@ -1,0 +1,572 @@
+---
+title: "Exploratory Data Analysis"
+subtitle: "Kikoff Marketing Mix Modeling: Data insights and Phase 2 decisions"
+date: 2026-04-13
+author: "Data Science Team"
+format:
+  revealjs:
+    code-fold: true
+    code-summary: "Show code"
+    slide-number: true
+    chalkboard: false
+    preview-links: auto
+    theme: default
+    transition: none
+    width: 1200
+    height: 800
+    center: false
+    hash: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Overview
+
+**Session Purpose:** Present exploratory data analysis findings and clarify decisions required for Phase 2 modeling
+**Audience:** Project team and supervising data scientist
+**Timeline:** Data analyzed 2024-01-01 through 2026-04-07
+
+## Agenda
+
+1. Key insights from data exploration
+2. Spend patterns and channel composition
+3. Conversion and LTV analysis
+4. Spend-conversion relationship and adstock implications
+5. Seasonality patterns and calendar effects
+6. Incrementality test insights and Bayesian priors
+7. Channel mapping requirements
+8. Critical decisions needed to proceed with Phase 2
+
+---
+
+# Data Setup
+
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+from scipy.signal import savgol_filter
+import warnings
+warnings.filterwarnings('ignore')
+
+# Set style
+plt.style.use('seaborn-v0_8-darkgrid')
+sns.set_palette("husl")
+
+# Load data
+spend_df = pd.read_csv('../data/MMM_PLATFORM_CHANNEL_DAILY_SPEND_2026-04-07-1111.csv')
+ltv_df = pd.read_csv('../data/MMM_DAILY_CONVENSIONS_LTV_2026-04-07-1304.csv')
+
+# Convert dates
+spend_df['DS'] = pd.to_datetime(spend_df['DS'])
+ltv_df['DS'] = pd.to_datetime(ltv_df['DS'])
+
+# Filter LTV to 2024 onwards (drop 2023)
+ltv_df = ltv_df[ltv_df['DS'] >= '2024-01-01'].copy()
+
+# Create combined daily dataset
+daily_df = spend_df.groupby('DS')['TOTAL_SPEND'].sum().reset_index()
+daily_df = daily_df.merge(ltv_df, on='DS', how='inner')
+daily_df['REVENUE'] = daily_df['CONVERSIONS'] * daily_df['LTV_1YEAR']
+
+print(f"Data loaded: Spend ({len(spend_df)} rows), LTV ({len(ltv_df)} rows), Combined ({len(daily_df)} days)")
+```
+
+---
+
+# Key Insights
+
+## High-Level Findings
+
+```{python}
+# Compute key metrics
+spend_by_channel = spend_df.groupby('SOURCE_GROUP')['TOTAL_SPEND'].sum().sort_values(ascending=False)
+top3_pct = (spend_by_channel.head(3).sum() / spend_by_channel.sum()) * 100
+
+conv_mean = ltv_df['CONVERSIONS'].mean()
+conv_peak = ltv_df['CONVERSIONS'].max()
+conv_peak_date = ltv_df.loc[ltv_df['CONVERSIONS'].idxmax(), 'DS']
+
+# Compute lagged correlations
+lag_corrs = []
+for lag in range(22):
+    if lag < len(daily_df):
+        corr = daily_df['TOTAL_SPEND'].iloc[:-lag].reset_index(drop=True).corr(
+            daily_df['CONVERSIONS'].iloc[lag:].reset_index(drop=True)
+        )
+        lag_corrs.append({'lag': lag, 'r': corr})
+    else:
+        lag_corrs.append({'lag': lag, 'r': np.nan})
+
+lag_corrs_df = pd.DataFrame(lag_corrs)
+best_lag_row = lag_corrs_df.loc[lag_corrs_df['r'].idxmax()]
+
+avg_ltv = daily_df['LTV_1YEAR'].mean()
+r_revenue = daily_df['TOTAL_SPEND'].corr(daily_df['REVENUE'].shift(7))
+r_conversions = daily_df['TOTAL_SPEND'].corr(daily_df['CONVERSIONS'].shift(7))
+
+print("KEY INSIGHTS FROM DATA EXPLORATION\n")
+print(f"1. SPEND CONCENTRATION")
+print(f"   Top 3 channels represent {top3_pct:.1f}% of total spend")
+print(f"   Leading channels: {spend_by_channel.index[0]}, {spend_by_channel.index[1]}, {spend_by_channel.index[2]}\n")
+
+print(f"2. CONVERSION SEASONALITY (TAX SEASON SIGNAL)")
+print(f"   Peak conversions: {conv_peak_date.strftime('%Y-%m-%d')} ({conv_peak:,.0f})")
+print(f"   Baseline average: {conv_mean:,.0f} conversions/day")
+print(f"   Peak-to-baseline ratio: {conv_peak/conv_mean:.2f}x\n")
+
+print(f"3. SPEND-CONVERSION LAG (ADSTOCK SIGNAL)")
+print(f"   Optimal lag: {int(best_lag_row['lag'])} days")
+print(f"   Peak correlation: r = {best_lag_row['r']:.3f}")
+print(f"   Implication: Advertising effects carry over; adstock transformation required\n")
+
+print(f"4. BAYESIAN PRIORS AVAILABLE")
+print(f"   3 channels have incrementality test results")
+print(f"   12+ SOURCE_GROUP values rely on data-driven estimates\n")
+
+print(f"5. REVENUE SIGNAL STRONGER THAN CONVERSIONS")
+print(f"   Revenue 7-day lagged correlation: r = {r_revenue:.3f}")
+print(f"   Conversions 7-day lagged correlation: r = {r_conversions:.3f}")
+```
+
+---
+
+# Spend Analysis
+
+## Daily Spend Trends
+
+```{python}
+daily_spend = spend_df.groupby('DS')['TOTAL_SPEND'].sum().reset_index()
+daily_spend['ma_30'] = daily_spend['TOTAL_SPEND'].rolling(window=30).mean()
+
+fig, ax = plt.subplots(figsize=(14, 6))
+ax.plot(daily_spend['DS'], daily_spend['TOTAL_SPEND'], alpha=0.4, color='gray', label='Daily Spend')
+ax.plot(daily_spend['DS'], daily_spend['ma_30'], linewidth=2, color='navy', label='30-day MA')
+ax.set_title('Total Daily Spend Over Time', fontsize=13, fontweight='bold')
+ax.set_xlabel('Date')
+ax.set_ylabel('Daily Spend ($)')
+ax.legend()
+ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x/1e6:.1f}M'))
+plt.tight_layout()
+plt.show()
+```
+
+## Channel Composition Over Time
+
+```{python}
+monthly_composition = spend_df.copy()
+monthly_composition['month'] = monthly_composition['DS'].dt.to_period('M').astype(str)
+monthly_agg = monthly_composition.groupby(['month', 'SOURCE_GROUP'])['TOTAL_SPEND'].sum().reset_index()
+monthly_agg['pct'] = monthly_agg.groupby('month')['TOTAL_SPEND'].transform(lambda x: x / x.sum() * 100)
+
+pivot_data = monthly_agg.pivot(index='month', columns='SOURCE_GROUP', values='pct').fillna(0)
+
+fig, ax = plt.subplots(figsize=(14, 6))
+pivot_data.plot(kind='bar', stacked=True, ax=ax, width=0.9, colormap='tab20')
+ax.set_title('Channel Composition Over Time', fontsize=13, fontweight='bold')
+ax.set_xlabel('Month')
+ax.set_ylabel('Percentage of Spend (%)')
+ax.legend(title='Channel', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=7)
+ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+ax.set_ylim(0, 100)
+plt.tight_layout()
+plt.show()
+```
+
+## Top Channels by Total Spend
+
+```{python}
+top_channels = spend_df.groupby('SOURCE_GROUP')['TOTAL_SPEND'].sum().sort_values(ascending=True).tail(10)
+
+fig, ax = plt.subplots(figsize=(10, 6))
+bars = ax.barh(range(len(top_channels)), top_channels.values, color='steelblue', alpha=0.8)
+ax.set_yticks(range(len(top_channels)))
+ax.set_yticklabels(top_channels.index)
+for i, (idx, val) in enumerate(top_channels.items()):
+    ax.text(val, i, f'  ${val/1e6:.1f}M', va='center', fontsize=9)
+ax.set_title('Top 10 Channels by Total Spend', fontsize=13, fontweight='bold')
+ax.set_xlabel('Total Spend ($)')
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+# Conversion and LTV Analysis
+
+## Daily Conversions and Seasonality
+
+```{python}
+fig, ax = plt.subplots(figsize=(14, 6))
+ax.plot(ltv_df['DS'], ltv_df['CONVERSIONS'], alpha=0.5, color='gray', linewidth=1)
+
+# Add LOESS-like smooth using savgol filter
+window_length = min(51, len(ltv_df) // 2 * 2 - 1)
+if window_length >= 3:
+    smoothed = savgol_filter(ltv_df['CONVERSIONS'].values, window_length, 3)
+    ax.plot(ltv_df['DS'], smoothed, color='darkgreen', linewidth=2, label='Smoothed trend')
+
+ax.set_title('Daily Conversions Over Time', fontsize=13, fontweight='bold')
+ax.set_xlabel('Date')
+ax.set_ylabel('Conversions')
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+## LTV Per Conversion (ARPU) Trends
+
+```{python}
+fig, ax = plt.subplots(figsize=(14, 6))
+ax.plot(ltv_df['DS'], ltv_df['LTV_1YEAR'], alpha=0.5, color='orange', linewidth=1)
+
+# Add LOESS-like smooth
+window_length = min(51, len(ltv_df) // 2 * 2 - 1)
+if window_length >= 3:
+    smoothed = savgol_filter(ltv_df['LTV_1YEAR'].values, window_length, 3)
+    ax.plot(ltv_df['DS'], smoothed, color='darkred', linewidth=2, label='Smoothed trend')
+
+ax.set_title('Customer Lifetime Value Per Conversion', fontsize=13, fontweight='bold')
+ax.set_xlabel('Date')
+ax.set_ylabel('LTV_1YEAR ($)')
+ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x:.0f}'))
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+## Revenue Signal Strength
+
+```{python}
+daily_df_plot = daily_df.copy()
+daily_df_plot['month'] = daily_df_plot['DS'].dt.to_period('M')
+monthly_agg_rev = daily_df_plot.groupby('month')[['CONVERSIONS', 'REVENUE']].mean().reset_index()
+monthly_agg_rev['month'] = monthly_agg_rev['month'].dt.to_timestamp()
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+ax1.bar(monthly_agg_rev['month'], monthly_agg_rev['CONVERSIONS'], color='steelblue', alpha=0.8)
+ax1.set_title('Average Daily Conversions by Month', fontsize=12, fontweight='bold')
+ax1.set_xlabel('Month')
+ax1.set_ylabel('Conversions')
+ax1.tick_params(axis='x', rotation=45)
+
+ax2.bar(monthly_agg_rev['month'], monthly_agg_rev['REVENUE'], color='steelblue', alpha=0.8)
+ax2.set_title('Average Daily Revenue by Month', fontsize=12, fontweight='bold')
+ax2.set_xlabel('Month')
+ax2.set_ylabel('Revenue ($)')
+ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'${x/1e3:.0f}K'))
+ax2.tick_params(axis='x', rotation=45)
+
+fig.suptitle('Conversions vs Revenue (Monthly Averages)', fontsize=13, fontweight='bold', y=1.02)
+plt.tight_layout()
+plt.show()
+```
+
+## Data Quality: Identified Issues
+
+```{python}
+null_ltv = ltv_df[ltv_df['LTV_1YEAR'].isna()]
+print("LTV Data Quality")
+print(f"  Null values: {len(null_ltv)} dates")
+if len(null_ltv) > 0:
+    print(f"  Dates with nulls: {', '.join(null_ltv['DS'].astype(str))}")
+
+null_spend = spend_df[spend_df['TOTAL_SPEND'].isna()]
+print(f"\nSpend Data Quality")
+print(f"  Null values: {len(null_spend)} rows")
+```
+
+---
+
+# Spend-Conversion Relationship
+
+## Lagged Correlation Analysis
+
+The optimal lag identifies the typical timeframe for advertising effects to materialize in conversions. This analysis motivates the adstock transformation used in the model.
+
+```{python}
+lag_corrs_full = []
+for lag in range(22):
+    if lag < len(daily_df):
+        corr = daily_df['TOTAL_SPEND'].iloc[:-lag].reset_index(drop=True).corr(
+            daily_df['CONVERSIONS'].iloc[lag:].reset_index(drop=True)
+        )
+        lag_corrs_full.append({'lag': lag, 'correlation': corr})
+    else:
+        lag_corrs_full.append({'lag': lag, 'correlation': np.nan})
+
+lag_corrs_full_df = pd.DataFrame(lag_corrs_full)
+best_lag_idx = lag_corrs_full_df['correlation'].idxmax()
+best_lag_val = lag_corrs_full_df.loc[best_lag_idx, 'lag']
+best_corr_val = lag_corrs_full_df.loc[best_lag_idx, 'correlation']
+
+fig, ax = plt.subplots(figsize=(12, 6))
+ax.plot(lag_corrs_full_df['lag'], lag_corrs_full_df['correlation'], linewidth=2, marker='o', markersize=6, color='steelblue')
+ax.axvline(x=best_lag_val, linestyle='--', color='red', alpha=0.7, linewidth=2)
+ax.plot(best_lag_val, best_corr_val, marker='o', markersize=10, color='red')
+ax.text(best_lag_val + 0.5, best_corr_val - 0.02, f'Peak: {int(best_lag_val)} days\nr = {best_corr_val:.3f}',
+        fontsize=10, color='red')
+ax.set_title('Spend-to-Conversion Lag Analysis', fontsize=13, fontweight='bold')
+ax.set_xlabel('Lag (days)')
+ax.set_ylabel('Correlation (Pearson r)')
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+# Seasonality and Calendar Effects
+
+## Month-of-Year Patterns
+
+```{python}
+ltv_df_copy = ltv_df.copy()
+ltv_df_copy['month'] = ltv_df_copy['DS'].dt.month
+ltv_df_copy['month_name'] = ltv_df_copy['DS'].dt.strftime('%B')
+
+monthly_patterns = ltv_df_copy.groupby(['month', 'month_name'])['CONVERSIONS'].mean().reset_index()
+monthly_patterns = monthly_patterns.sort_values('month')
+
+fig, ax = plt.subplots(figsize=(12, 6))
+bars = ax.bar(range(len(monthly_patterns)), monthly_patterns['CONVERSIONS'].values, color='steelblue', alpha=0.8)
+ax.set_xticks(range(len(monthly_patterns)))
+ax.set_xticklabels(monthly_patterns['month_name'].values, rotation=45)
+for i, (idx, row) in enumerate(monthly_patterns.iterrows()):
+    ax.text(i, row['CONVERSIONS'], f"{row['CONVERSIONS']:.0f}", ha='center', va='bottom', fontsize=9)
+ax.set_title('Month-of-Year Seasonality', fontsize=13, fontweight='bold')
+ax.set_xlabel('Month')
+ax.set_ylabel('Average Daily Conversions')
+ax.set_ylim(top=monthly_patterns['CONVERSIONS'].max() * 1.15)
+plt.tight_layout()
+plt.show()
+```
+
+## Day-of-Week Patterns
+
+```{python}
+ltv_df_copy = ltv_df.copy()
+ltv_df_copy['dow'] = ltv_df_copy['DS'].dt.day_name()
+ltv_df_copy['dow_num'] = ltv_df_copy['DS'].dt.dayofweek
+
+dow_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+dow_patterns = ltv_df_copy.groupby(['dow_num', 'dow'])['CONVERSIONS'].mean().reset_index()
+dow_patterns = dow_patterns.sort_values('dow_num')
+
+fig, ax = plt.subplots(figsize=(12, 6))
+bars = ax.bar(range(len(dow_patterns)), dow_patterns['CONVERSIONS'].values, color='steelblue', alpha=0.8)
+ax.set_xticks(range(len(dow_patterns)))
+ax.set_xticklabels(dow_patterns['dow'].values, rotation=45)
+for i, (idx, row) in enumerate(dow_patterns.iterrows()):
+    ax.text(i, row['CONVERSIONS'], f"{row['CONVERSIONS']:.0f}", ha='center', va='bottom', fontsize=9)
+ax.set_title('Day-of-Week Pattern in Conversions', fontsize=13, fontweight='bold')
+ax.set_xlabel('Day of Week')
+ax.set_ylabel('Average Conversions')
+ax.set_ylim(top=dow_patterns['CONVERSIONS'].max() * 1.15)
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+# Incrementality Test Insights
+
+## Test Results Summary
+
+Four incrementality tests have been conducted:
+
+| Channel | Period | Type | Status |
+|---------|--------|------|--------|
+| TikTok | Aug 22 - Sep 15, 2025 | Holdout | Complete, clean |
+| Meta | May 6 - May 14, 2025 | Holdout (ended early) | Complete, usable |
+| Meta | Jan 3 - Jan 8, 2026 | Holdout (cancelled) | Uncertain, approx spend |
+| CTV | Oct 6 - Nov 2, 2025 | Geo holdout | Complete, clean |
+
+## iCAC Estimates by Channel and Platform
+
+```{python}
+icroas_data = pd.DataFrame({
+    'channel': ['TikTok', 'TikTok', 'TikTok', 'Meta (May)', 'Meta (May)', 'Meta (May)', 'CTV'],
+    'platform': ['iOS', 'Android', 'Web', 'iOS', 'Android', 'Web', 'All'],
+    'icac': [108.83, 81.68, 112.12, 135.48, 63.06, 156.89, 135.00]
+})
+
+avg_ltv_val = daily_df['LTV_1YEAR'].mean()
+icroas_data['icroas'] = avg_ltv_val / icroas_data['icac']
+icroas_data['label'] = icroas_data['channel'] + '\n' + icroas_data['platform']
+icroas_data = icroas_data.sort_values('icroas')
+
+fig, ax = plt.subplots(figsize=(10, 6))
+bars = ax.barh(range(len(icroas_data)), icroas_data['icroas'].values, color='steelblue', alpha=0.8)
+ax.set_yticks(range(len(icroas_data)))
+ax.set_yticklabels(icroas_data['label'].values)
+for i, val in enumerate(icroas_data['icroas'].values):
+    ax.text(val, i, f'  {val:.2f}', va='center', fontsize=9)
+ax.set_title('Incrementality-Derived ROAS by Channel and Platform', fontsize=13, fontweight='bold')
+ax.set_xlabel('Implied ROAS (Revenue per Dollar Spend)')
+ax.text(0.5, -0.15, 'Excludes Jan 2026 Meta test (cancelled, uncertain data)',
+        transform=ax.transAxes, fontsize=9, ha='center', style='italic')
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+# Channel Taxonomy Mapping
+
+## The Critical Alignment Requirement
+
+The spend data contains **15 SOURCE_GROUP values** from your operational data system.
+
+Your business operates across **12-13 marketing channels**.
+
+We need to align these taxonomies before Phase 2 modeling.
+
+---
+
+## Current SOURCE_GROUP Values
+
+```{python}
+source_groups = spend_df.groupby('SOURCE_GROUP')['TOTAL_SPEND'].sum().sort_values(ascending=False).reset_index()
+
+mapping_template = pd.DataFrame({
+    'SOURCE_GROUP': source_groups['SOURCE_GROUP'].values,
+    'Best Guess': ['Meta', 'Google/Search', 'TikTok', 'Mobile DSP', 'Others',
+                   'Mobile DSP', 'Linear TV', 'CTV', 'Audio/Podcast', 'Apple Search',
+                   'Mobile DSP?', 'DSP?', 'Influencers', 'Bing Search?', 'DSP?'],
+    'Confidence': ['High', 'Low', 'High', 'Low', 'Medium', 'Low', 'High', 'High',
+                   'Low', 'High', 'Low', 'Low', 'Medium', 'Low', 'Low']
+})
+
+print(mapping_template.to_string(index=False))
+```
+
+---
+
+## Spend Distribution by SOURCE_GROUP
+
+```{python}
+source_groups_sorted = spend_df.groupby('SOURCE_GROUP')['TOTAL_SPEND'].sum().sort_values(ascending=True)
+
+fig, ax = plt.subplots(figsize=(12, 8))
+bars = ax.barh(range(len(source_groups_sorted)), source_groups_sorted.values, color='steelblue', alpha=0.8)
+ax.set_yticks(range(len(source_groups_sorted)))
+ax.set_yticklabels(source_groups_sorted.index, fontsize=10)
+for i, (idx, val) in enumerate(source_groups_sorted.items()):
+    ax.text(val, i, f'  ${val/1e6:.1f}M', va='center', fontsize=9)
+ax.set_title('Spend by Channel (for mapping context)', fontsize=13, fontweight='bold')
+ax.set_xlabel('Total Spend ($)', fontsize=11)
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+# Critical Decisions for Phase 2
+
+## Required Input Summary
+
+Three decisions are required before Phase 2 can proceed. All three are blocking and shape the model architecture.
+
+### 1. Channel Taxonomy Mapping (Blocking)
+
+**Requirement:** Map each SOURCE_GROUP value to your business channel taxonomy.
+
+**Impact:** Determines model parameter space, incrementality prior assignment, and all downstream reporting.
+
+**Input needed:**
+- Mapping table (SOURCE_GROUP → business channel)
+- Clarification on whether programmatic DSP vendors (applovin, liftoff, appvertiser) are separate channels or should be grouped
+
+---
+
+### 2. Platform Data Handling (Blocking)
+
+**Requirement:** Clarify approach for combined platform values ("web and app", "iOS and android").
+
+**Impact:** Determines model granularity and parameter space dimensionality.
+
+**Decision options:**
+- Disaggregate combined rows and model at channel-platform level (increases parameters by ~3x)
+- Aggregate all platform rows to channel level (simpler, loses platform-specific insights)
+
+---
+
+### 3. Primary Optimization Target (Blocking)
+
+**Requirement:** Confirm primary variable for model calibration and budget optimization.
+
+**Impact:** Shapes model objective function and all ROI/contribution estimates.
+
+**Decision options:**
+- Purchase volume (CONVERSIONS)
+- Customer lifetime value (LTV_1YEAR)
+- Total revenue (CONVERSIONS × LTV)
+
+If choosing revenue: confirm 1-year vs. 3-year LTV horizon.
+
+---
+
+### 4. Test Data Quality (Important)
+
+**Requirement:** Clarify status of January 2026 Meta incrementality test (cancelled, approximate spend).
+
+**Impact:** Affects prior uncertainty and Meta channel calibration strategy.
+
+**Question:** Include with high-uncertainty prior or exclude from calibration?
+
+---
+
+### 5. LTV Anomalies (Important)
+
+**Requirement:** Identify remaining ~8 bad LTV values beyond the 2 identified nulls.
+
+**Impact:** Data preprocessing step; affects time series stability.
+
+**Input needed:** List of dates or identification rule (threshold range, statistical criteria, etc.)
+
+---
+
+# Readiness Assessment
+
+## What's Complete
+
+- Data alignment validated: 828 days (2024-01-01 to 2026-04-07)
+- Spend patterns characterized: 15 SOURCE_GROUP channels identified
+- Conversion seasonality confirmed: Tax season effect visible (Jan-Apr boost)
+- Adstock effects identified: ~{int(best_lag_val)}-day lag between spend and conversions
+- Incrementality calibration ready: 3 usable tests (TikTok, Meta, CTV)
+- Target variable analysis: Revenue signal stronger than volume alone
+
+## What's Awaiting Approval
+
+- Channel taxonomy alignment (SOURCE_GROUP → business channels)
+- Platform aggregation strategy
+- Primary optimization target selection
+- Test data quality confirmation
+
+## Next Steps (Post-Decision)
+
+Once the above three decisions are finalized:
+
+1. **Data Preprocessing:** Apply channel mapping, aggregate platforms as decided
+2. **Feature Engineering:** Adstock transformation, seasonality terms, control variables
+3. **Bayesian Calibration:** Integrate incrementality test results as priors
+4. **Model Development:** Architecture selection and fitting
+
+---
+
+# Conclusion
+
+The exploratory analysis establishes that we have clean, well-aligned data with clear seasonal and carryover patterns. Three critical business alignment decisions remain. Once these are resolved, we can proceed directly to Phase 2 development without further data exploration.
+
+**Next meeting:** Discuss and finalize the three blocking decisions to unblock Phase 2.
+
+---
+
+*Exploratory data analysis | Kikoff Marketing Mix Modeling Team | 2026-04-13*

@@ -1,0 +1,78 @@
+.reveal {
+  font-size: 26px;
+}
+.reveal h1 {
+  font-size: 1.6em;
+}
+.reveal h2 {
+  font-size: 1.15em;
+  margin-bottom: 0.4em;
+  flex-shrink: 0;
+}
+.reveal p {
+  margin: 0.3em 0;
+}
+.reveal ul {
+  margin: 0.3em 0;
+}
+.reveal li {
+  margin: 0.18em 0;
+  line-height: 1.4;
+}
+.reveal table {
+  font-size: 0.88em;
+  width: 100%;
+  border-collapse: collapse;
+}
+.reveal table th {
+  background: #f4f4f4;
+  padding: 7px 13px;
+  text-align: left;
+  border-bottom: 2px solid #ccc;
+}
+.reveal table td {
+  padding: 6px 13px;
+  border-bottom: 1px solid #e8e8e8;
+}
+.reveal table tr:last-child td {
+  border-bottom: none;
+}
+.reveal .slide-menu-button {
+  display: none;
+}
+.reveal em {
+  color: #666;
+  font-style: normal;
+  font-size: 0.82em;
+}
+.reveal strong {
+  font-weight: 600;
+}
+
+/* ── Content box ─────────────────────────────────────────────────────────── */
+/* Each content slide is a visually bounded, scrollable box.                 */
+/* Uses all available slide space; content scrolls inside rather than clips. */
+.reveal .slides section.level2 {
+  border: 1.5px solid #dde3ea;
+  border-radius: 6px;
+  background: #fdfdfd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 16px 28px !important;
+  box-sizing: border-box;
+  overflow-y: auto !important;
+}
+
+/* Code blocks inside slides */
+.reveal pre {
+  font-size: 0.72em;
+  border-radius: 5px;
+  margin: 0.4em 0;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: none;
+  border: 1px solid #e0e4ea;
+}
+
+.reveal code {
+  font-size: 0.85em;
+}

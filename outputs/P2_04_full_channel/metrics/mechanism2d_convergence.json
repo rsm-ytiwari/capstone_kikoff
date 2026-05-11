@@ -1,0 +1,146 @@
+{
+  "script": "08d_mechanism2_sigma20",
+  "weekly_obs": 93,
+  "n_channels": 19,
+  "channel_columns": [
+    "apple_search",
+    "applovin_android",
+    "applovin_ios",
+    "ctv",
+    "dsp",
+    "google_android",
+    "google_ios",
+    "google_web",
+    "influencer",
+    "liftoff",
+    "linear_tv",
+    "meta_android",
+    "meta_ios",
+    "meta_web",
+    "others",
+    "podcast",
+    "tiktok_android",
+    "tiktok_ios",
+    "tiktok_web"
+  ],
+  "lift_tests_applied": [
+    {
+      "label": "meta_ios_may25",
+      "channel": "meta_ios",
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y": 1156.0,
+      "sigma": 231.0,
+      "n_weeks": 2
+    },
+    {
+      "label": "meta_android_may25",
+      "channel": "meta_android",
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y": 1405.0,
+      "sigma": 281.0,
+      "n_weeks": 2
+    },
+    {
+      "label": "meta_web_may25",
+      "channel": "meta_web",
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y": 1128.0,
+      "sigma": 226.0,
+      "n_weeks": 2
+    },
+    {
+      "label": "tiktok_ios_aug25",
+      "channel": "tiktok_ios",
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y": 569.0,
+      "sigma": 114.0,
+      "n_weeks": 4
+    },
+    {
+      "label": "tiktok_android_aug25",
+      "channel": "tiktok_android",
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y": 651.0,
+      "sigma": 130.0,
+      "n_weeks": 4
+    },
+    {
+      "label": "tiktok_web_aug25",
+      "channel": "tiktok_web",
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y": 6215.0,
+      "sigma": 1243.0,
+      "n_weeks": 4
+    },
+    {
+      "label": "ctv_oct25",
+      "channel": "ctv",
+      "start": "2025-10-06",
+      "end": "2025-11-01",
+      "delta_y": 1840.0,
+      "sigma": 368.0,
+      "n_weeks": 4
+    }
+  ],
+  "convergence": {
+    "rhat_max": 1.006,
+    "ess_min": 496.4,
+    "divergences": 92,
+    "rhat_gate_pass": true,
+    "ess_gate_pass": true
+  },
+  "baseline_pct": 0.6426,
+  "icac": {
+    "apple_search": 288.18,
+    "applovin_android": 314.09,
+    "applovin_ios": 264.54,
+    "ctv": 140.25,
+    "dsp": 151.21,
+    "google_android": 632.48,
+    "google_ios": 136.17,
+    "google_web": 296.24,
+    "influencer": 52.73,
+    "liftoff": 56.61,
+    "linear_tv": 33.24,
+    "meta_android": 169.93,
+    "meta_ios": 181.99,
+    "meta_web": 588.0,
+    "others": 1.44,
+    "podcast": 55.31,
+    "tiktok_android": 154.84,
+    "tiktok_ios": 395.24,
+    "tiktok_web": 212.26
+  },
+  "benchmarks": {
+    "meta_ios": 135.48,
+    "meta_android": 63.06,
+    "meta_web": 156.89,
+    "tiktok_ios": 108.83,
+    "tiktok_android": 81.68,
+    "tiktok_web": 112.12,
+    "ctv": 135.05
+  },
+  "gates": {
+    "gate_icac_meta_ios": true,
+    "gate_icac_meta_android": false,
+    "gate_icac_meta_web": false,
+    "gate_icac_tiktok_ios": false,
+    "gate_icac_tiktok_android": false,
+    "gate_icac_tiktok_web": false,
+    "gate_icac_ctv": true,
+    "gate_ordering_meta_ios_gt_android": true,
+    "gate_rhat_pass": true,
+    "gate_ess_pass": true,
+    "gate_baseline_pass": true
+  },
+  "all_gates_pass": false,
+  "phase_b_winner": false,
+  "contribution_api_used": "compute_mean_contributions_over_time",
+  "notes": "Mechanism 2 windowed priors. sigma=20% of delta_y (tighter than 08b 30%, looser than 08c 10%). Lift test evidence restricted to experimental windows. Meta Jan 2026 excluded: study cancelled, only 10 iOS conversions."
+}

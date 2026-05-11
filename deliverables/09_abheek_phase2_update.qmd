@@ -1,0 +1,385 @@
+---
+title: "Phase 2 Update: Model Build Progress"
+subtitle: "Kikoff Marketing Mix Model"
+date: 2026-05-04
+author: "Data Science Team"
+format:
+  revealjs:
+    css: custom-reveal.css
+    slide-number: true
+    theme: default
+    transition: none
+    width: 1200
+    height: 800
+    center: false
+    scrollable: true
+    embed-resources: true
+    execute:
+      echo: false
+      warning: false
+---
+
+## Where we left off — Phase 1 complete, four holdout experiments in hand {.smaller}
+
+**What Phase 1 delivered:**
+
+- **639 days** of clean, channel-level spend data — Q3 2024 through March 2026
+- **12 channels** mapped and validated; Others category reduced to ~$0 after data correction
+- **4 holdout experiments** from Kikoff's past tests: Meta (May 2025), Meta (Jan 2026), TikTok (Aug–Sep 2025), CTV (Oct–Nov 2025)
+
+**The plan for Phase 2:** Use those holdout results to anchor the model's channel efficiency estimates before fitting on the full history.
+
+| Channel | Platform | Holdout iCAC |
+|---|---|---|
+| Meta (May 2025) | iOS | $135 |
+| Meta (May 2025) | Android | $63 |
+| Meta (May 2025) | Web | $157 |
+
+*These are the ground truth values — whatever the model produces should be close to these.*
+
+---
+
+## Why start with a baseline model before adding experimental evidence? {.smaller}
+
+**In Bayesian MMM, you always fit the unconstrained model first.** This answers three questions before adding any experimental guidance:
+
+1. **Does the model architecture work?** — Does it converge? Can it find signal in 639 days of data?
+2. **What does the model think without our guidance?** — The baseline ICAC tells us how far the observational history is from experimental ground truth.
+3. **What does adding holdout evidence actually change?** — Without a baseline, we can't measure improvement.
+
+::: {style="background-color: #f0f4f8; border-left: 4px solid #4a90d9; padding: 0.5em 1em; margin-top: 0.5em;"}
+**The baseline is not a mistake — it is the required starting point.** We expect ICAC to be wrong here. The question is: by how much, and in which direction? That tells us what the data confounds look like before we correct for them.
+:::
+
+**Scope:** Meta channel only (iOS · Android · Web) — highest spend channel at $23.1M/year. Full channel expansion follows once the modeling approach is validated.
+
+---
+
+## Baseline model — code, output, and formula verification {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**From `notebooks/P2_03_mmm_meta_poc_CURRENT.py` — Section 2:**
+
+```python
+mmm = MMM(
+    adstock=GeometricAdstock(l_max=7),
+    saturation=LogisticSaturation(),
+    date_column="date",
+    channel_columns=[
+        "meta_ios", "meta_android", "meta_web"
+    ],
+)
+mmm.build_model(X, y)
+idata = mmm.fit(X, y, draws=1000, tune=500)
+
+# ICAC = total spend ÷ attributed conversions
+contributions = mmm.compute_mean_contributions_over_time(
+    original_scale=True
+)
+icac_ios = X["meta_ios"].sum() / contributions["meta_ios"].sum()
+```
+
+**Model convergence:** Rhat 1.005 ✓ · ESS 1,005 ✓
+:::
+::: {.column width="50%"}
+**Baseline output (no experimental guidance):**
+
+| Platform | Baseline ICAC | Holdout ground truth |
+|---|---|---|
+| Meta iOS | **$21.17** | $135.48 |
+| Meta Android | **$957.57** | $63.06 |
+| Meta Web | **$456.70** | $156.89 |
+
+**Is the formula correct?** Yes — verified.
+
+`ICAC = total spend ÷ model-attributed conversions` is the standard definition. These numbers accurately reflect what the model infers from 19 months of observational data.
+
+The gap from ground truth is not a coding error. It is the model correctly learning from a dataset where iOS spend and high-conversion periods are correlated — so the model over-credits iOS and under-credits Android. The next step is adding experimental constraints to correct this.
+:::
+:::
+
+---
+
+## Our first calibration approach — integrating holdout results as experimental constraints {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**What `add_lift_test_measurements()` does:**
+
+Tells the model: "During the Meta May 2025 holdout window, when we increased iOS spend by a controlled amount, we observed this many incremental conversions — use this as an anchor." The function adds a second likelihood term that constrains the spend-to-conversion curve to be consistent with what the experiment directly measured.
+
+```python
+# Build experimental constraints from holdout results
+df_lift_test = pd.DataFrame({
+    "channel": ["meta_ios",    "meta_android", "meta_web"],
+    "x":       [159_923.36,   89_946.94,   214_096.48],
+    "delta_x": [19_190.80,    10_793.63,    25_691.58],
+    "delta_y": [1_180.3,      1_426.6,      1_364.6],
+    "sigma":   [141.6,         99.9,         245.6],
+})
+
+mmm_lifted.build_model(X_model, y_model)
+mmm_lifted.add_lift_test_measurements(df_lift_test)
+idata_lifted = mmm_lifted.fit(
+    X_model, y_model, draws=1000, tune=500
+)
+```
+:::
+::: {.column width="50%"}
+**What we told the model (inputs per platform):**
+
+| Platform | Spend in window | Holdout increase | Conversions observed | Uncertainty |
+|---|---|---|---|---|
+| iOS | $159,923 | $19,191 | 1,180 | ±141.6 |
+| Android | $89,947 | $10,794 | 1,427 | ±99.9 |
+| Web | $214,096 | $25,692 | 1,365 | ±245.6 |
+
+**ICAC before and after calibration:**
+
+| Platform | Baseline ICAC | After calibration | Benchmark |
+|---|---|---|---|
+| iOS | $21.17 | $23.25 | $135.48 |
+| Android | $957.57 | $598.84 | $63.06 |
+| Web | $456.70 | $362.61 | $156.89 |
+
+The calibration moved ICAC slightly for all three — but not enough. The 639-day observational pattern is overriding the 9-day experiment.
+:::
+:::
+
+---
+
+## How we decided whether the model output was trustworthy {.smaller}
+
+Before trusting any ICAC number, we define pass/fail gates. The model must pass all gates — if any fail, we do not report those numbers as valid.
+
+**On the ±50% tolerance:** We set a generous threshold — anywhere from half to double the benchmark qualifies as a pass. Even with this latitude, all three ICAC gates failed. A tighter threshold (±25%) would show the same failures by wider margins in every case.
+
+| Gate | Definition | Threshold | Result |
+|---|---|---|---|
+| 1a | iOS ICAC near $135.48 | $67.74 – $203.22 | **FAIL** — $23.25 |
+| 1b | Android ICAC near $63.06 | $31.53 – $94.59 | **FAIL** — $598.84 |
+| 1c | Web ICAC near $156.89 | $78.45 – $235.34 | **FAIL** — $362.61 |
+| 2 | iOS ICAC > Android ICAC | iOS more expensive than Android (confirmed by experiment) | **FAIL** — iOS $23 < Android $599 |
+| 3a | Rhat < 1.1 | Convergence — all chains agree | **PASS** — 1.02 |
+| 3b | ESS > 400 | Effective sample size | **FAIL** — 238 |
+
+**Convergence was healthy (Gate 3a passed) — the model ran correctly. The issue is attribution, not computation.**
+
+---
+
+## First model pass — we integrated the holdout results directly into the model {.smaller}
+
+**What we built:** A Bayesian MMM that uses PyMC-Marketing's experimental calibration layer — feeding each holdout test result in as a direct constraint on the spend-outcome curve for that channel and platform.
+
+**Model health:** Ran successfully. Sampling converged.
+
+**Model output vs. holdout benchmarks:**
+
+| Platform | Holdout iCAC (ground truth) | Model output | Status |
+|---|---|---|---|
+| Meta iOS | $135 | $23 | ✗  83% below benchmark |
+| Meta Android | $63 | $599 | ✗  9× above benchmark |
+| Meta Web | $157 | $363 | ✗  2× above benchmark |
+
+The model is not recovering the experimental values. Something in the 19-month observational history is overriding the holdout signal — particularly for iOS.
+
+---
+
+## Why 639 days of history overwhelmed a 9-day experiment {.smaller}
+
+In a Bayesian model, the model learns from two sources simultaneously: the observational time series (639 days of spend and conversion data) and the experimental constraint (the 9-day Meta May 2025 holdout). Both compete to shape the model's estimate of iOS efficiency.
+
+**The imbalance:**
+
+```
+Observational history (639 days): ████████████████████████████████████████████████████████████████████
+Holdout window (9 days):          ▌
+```
+
+The model sees **71 days of observational data for every 1 day of experimental data.** The experimental signal is real — but it competes with a pattern that repeats consistently across 19 months.
+
+Adding the holdout results as a global constraint doesn't fix this — the model weighs both the data and the prior together, and 639 data points dominate 9. The fix is to restrict the model so the experimental prior only competes with data from those specific 9 days — not the full history.
+
+| Source | Data points | Signal about iOS |
+|---|---|---|
+| Observational history | 639 days | "iOS spend days → high conversions" |
+| Holdout experiment | ~9 days | "iOS incremental cost ≈ $135" |
+
+---
+
+## Two competing hypotheses for why the model failed the gates {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**H1 — "Sigma too wide"**
+
+The model is fixable within our calibration approach. The problem is that our experimental uncertainty was set too generously — the model was told the experiment could be wrong by a wide margin, so it discounted it.
+
+**Diagnostic:** Divide uncertainty by 5. If ICAC moves toward benchmarks, H1 is confirmed.
+
+**Android result:** $957 → **$34** (within ±50% of $63 benchmark) ✅
+
+**Verdict: H1 confirmed for Android.** The experimental signal was present — it was just too diffuse to override the data.
+:::
+::: {.column width="50%"}
+**H2 — "Structural attribution problem"**
+
+The model is not fixable within our calibration approach, regardless of uncertainty settings. iOS spend happens to occur on days when total conversions are high — due to campaign scheduling — not because iOS caused those conversions.
+
+**Diagnostic:** Same tight-uncertainty run.
+
+**iOS result:** $21 → **$30**, barely moved. Sampler collapsed (Rhat 1.535, ESS 7 — model in irreconcilable conflict). ❌
+
+**Verdict: H2 confirmed for iOS.** No tuning can fix a channel where 639 days of data consistently contradicts the experiment.
+:::
+:::
+
+**H1 and H2 are not mutually exclusive — Android had an uncertainty problem, iOS has a structural correlation problem. Our calibration approach can address H1 but cannot address H2.**
+
+---
+
+## Correlation analysis — distinguishing H1 from H2 {.smaller}
+
+::: {.columns}
+::: {.column width="50%"}
+**What we measured:**
+
+Pearson correlation between each channel's daily spend and total daily conversions across the 639-day modeling window:
+
+| Channel | r | Interpretation |
+|---|---|---|
+| meta\_ios | **0.48** | Moderate — iOS spend days tend to be high-conversion days |
+| meta\_android | 0.28 | Weak-moderate |
+| meta\_web | 0.20 | Weak |
+
+Also notable: iOS has the **smallest** average daily spend ($4,659) and the **most zero-spend days** (29.9%). Despite spending the least and running the least often, it shows the strongest correlation with total conversions.
+
+**Why we suspect a pacing issue:** iOS campaigns appear to be concentrated in Q2 (spring season), which also happens to be a high-conversion period. We don't know whether this was deliberate budget strategy or coincidental — we'd like to ask about this directly.
+:::
+::: {.column width="50%"}
+**What this tells us:**
+
+r = 0.48 is real, not noise. When iOS runs, conversions tend to be high — but the open question is whether iOS is *causing* those conversions or simply *running during* periods when conversions were already going to be elevated.
+
+**Why controls don't solve it:** Any seasonal variable correlated with iOS's Q2 pacing (month indicators, day-of-week) is also correlated with Android and Web volume. Adding controls to absorb iOS correlation breaks Android attribution instead — we tested this directly.
+
+**On the diagnostic uncertainty test:** Dividing uncertainty by 5 was a diagnostic probe, not a calibrated number. We wanted to make the experimental signal as strong as possible to test whether the model could respond at all. Android moved to $34 (close to benchmark $63) — confirming the signal is present for Android. iOS barely moved — confirming the issue is structural.
+:::
+:::
+
+---
+
+## Diagnostic — we tested whether seasonal overlap was the cause {.smaller}
+
+**Hypothesis:** iOS spend and total conversions both peak in spring (tax season). The model might be conflating that calendar overlap with true iOS causal impact.
+
+**Test:** Our team added month-level and day-of-week controls to absorb seasonal patterns before the model estimates channel effectiveness.
+
+**Result:**
+
+| Platform | After seasonal controls | Holdout benchmark |
+|---|---|---|
+| Meta iOS | $34 | $135 |
+| Meta Android | **$1,728** | $63 |
+| Meta Web | $588 | $157 |
+
+iOS moved slightly ($23 → $34) but remains far below $135. Android moved dramatically in the wrong direction — the seasonal controls destabilized it because all channels share correlated seasonal patterns.
+
+**Conclusion:** Calendar overlap is not the explanation. The issue is structural.
+
+---
+
+## What we found — an iOS attribution challenge in the observational data {.smaller}
+
+::: {.columns}
+::: {.column width="60%"}
+**What the data shows:**
+
+When we look at the full 19 months of history, iOS ad spend and total conversions move together (r = 0.48). This appears to be because iOS campaigns ran more heavily during periods when conversions were already high — for example, spring tax season — not because those campaigns drove the conversions.
+
+**What the model infers from this:**
+
+> "When iOS spend is high, conversions are high — iOS must be very efficient."
+
+But this is correlation, not causation. The holdout experiment (which controlled for this) showed iOS efficiency is closer to $135, not $23.
+
+**Why more controls don't solve it:**
+
+The correlation persists across the full 639-day history. Absorbing it with seasonal dummies creates multicollinearity between channels that share the same seasonal pattern.
+:::
+::: {.column width="40%"}
+**Key implication:**
+
+The 19-month observational history alone cannot cleanly isolate iOS causal impact. The holdout experiments are our most reliable signal — and we need to use them more precisely.
+
+::: {style="background-color: #e8f4f8; border-left: 4px solid #2196F3; padding: 0.5em 1em; margin-top: 1em;"}
+This finding strengthens the case for Kikoff's holdout testing program. The experiments are doing exactly what they're designed to do — separating correlation from causation.
+:::
+:::
+:::
+
+---
+
+## What this tells us — and what it means for the model architecture {.smaller}
+
+| Question | Answer |
+|---|---|
+| **Is iOS structurally broken within the current approach?** | Yes. The 639-day time series contains a stable pattern — iOS spend correlates with high-conversion periods (r = 0.48) — that our calibration approach cannot override regardless of tuning. The experimental signal covers 9 days; the confounding pattern covers 639. |
+| **What does this mean for the ICAC numbers?** | Our first calibration approach cannot produce a trustworthy iOS ICAC from this dataset. The $23 output is not interpretable as a real efficiency estimate — the model is measuring correlation, not causation. |
+| **What are we moving to?** | Time-windowed priors — applying the experimental evidence only within the holdout window dates (May 6–14, 2025). During those 9 days, spend was experimentally controlled, so the iOS-conversion correlation is broken. The model is anchored to ground truth exactly where the observational confound is absent. |
+| **Why does that address the structural problem?** | Within those 9 days, iOS spend variation was determined by the experiment, not organic campaign pacing. The r = 0.48 pattern does not exist inside a controlled window — the experiment is designed to eliminate it. |
+
+::: {style="background-color: #f0f4f8; border-left: 4px solid #4a90d9; padding: 0.5em 1em; margin-top: 0.5em;"}
+**Android is solvable within the current approach** (H1 confirmed — the experimental signal is present, just needs tighter uncertainty bounds). **iOS requires a different architecture** — constraining the experiment to its actual time window, not the full 639-day history.
+:::
+
+---
+
+## What we're doing next — apply holdout evidence only within the test windows {.smaller}
+
+**The problem with the first approach:**
+
+We applied the holdout results as constraints across the *full* 19-month history. But the experiments only ran for a few weeks. The model is trying to use a short experimental window to constrain a long observational period — and the observational pattern (iOS-high in spring) is winning.
+
+**The new approach:**
+
+Apply the holdout evidence **only within the holdout time windows**. Outside those windows, the model uses a wider, less constrained prior.
+
+| | First approach | New approach |
+|---|---|---|
+| When holdout applies | All 639 days | Only during test weeks |
+| iOS observational confound | Overrides holdout | Isolated — test window spend was controlled |
+| Expected result | Holdout signal too weak | Holdout signal dominates where it's cleanest |
+
+**Timeline:** Model running this week. Results before end of week.
+
+---
+
+## Questions that will sharpen the model {.smaller}
+
+**Q1: iOS vs. Android spend allocation**
+
+For spend rows where iOS and Android are reported together, our team assumed a 50/50 split. This affects the platform-level iCAC estimates (but not channel-level totals).
+
+> Does Kikoff track actual platform-level spend separately? If so, we'd want to use the real breakdown rather than the 50/50 assumption.
+
+---
+
+**Q2: iOS campaign pacing — intentional strategy or calendar coincidence?**
+
+We observe that iOS ad spend concentrates in spring months, which also happen to be high-conversion periods (tax season). We suspect this is causing the correlation we found (r = 0.48 between iOS spend and total conversions), but we want to confirm directly.
+
+> Was this an intentional budget strategy — concentrating iOS spend during high-intent periods? Or is the seasonal overlap coincidental? And if deliberate, what drove the targeting decision?
+
+---
+
+**Q3: Conversion dip during the Meta May 2025 holdout window**
+
+We understand the Meta May 2025 holdout used a reach-restriction design — meaning some users were held out from seeing ads during May 6–14. This type of design typically causes a measurable dip in total conversions during the test window (the holdout group converts less because they saw no ads).
+
+> Our next approach applies experimental constraints specifically within those 9 days. If total conversions were suppressed during that window due to the holdout design, we want to make sure we're accounting for that correctly. Can you confirm: were total Kikoff conversions materially lower during the holdout window, and should we treat the test-period conversion dip as a known structural artifact?
+
+---
+
+*Phase 2 Model Build Update | Kikoff Marketing Mix Model | 2026-05-04*
