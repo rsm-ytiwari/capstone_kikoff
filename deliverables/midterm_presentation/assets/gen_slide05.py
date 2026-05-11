@@ -14,10 +14,8 @@ GOLD    = "#FFCC00"
 WHITE   = "#FFFFFF"
 CHARCOAL= "#333333"
 
-OUT = (
-    "/Users/yashtiwari/MSBA/Quarters/Spring_2026/capstone_team"
-    "/deliverables/midterm_presentation/assets/slide_05_attribution_comparison.png"
-)
+from pathlib import Path
+OUT = str(Path(__file__).parent / "slide_05_attribution_comparison.png")
 
 # ── Figure ─────────────────────────────────────────────────────────────────
 fig, ax = plt.subplots(figsize=(13, 5.5))

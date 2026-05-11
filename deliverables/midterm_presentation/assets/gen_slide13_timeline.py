@@ -202,9 +202,7 @@ ax.legend(
 plt.tight_layout(rect=[0.22, 0.05, 1.0, 1.0])
 
 # ── Save ──────────────────────────────────────────────────────────────────────
-OUT = (
-    "/Users/yashtiwari/MSBA/Quarters/Spring_2026/capstone_team"
-    "/deliverables/midterm_presentation/assets/slide_13_timeline.png"
-)
+from pathlib import Path
+OUT = str(Path(__file__).parent / "slide_13_timeline.png")
 fig.savefig(OUT, dpi=150, bbox_inches="tight", facecolor=WHITE)
 print(f"Saved → {OUT}")
