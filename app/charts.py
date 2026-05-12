@@ -114,67 +114,91 @@ def fig_iroas_baseline(baseline: dict) -> go.Figure:
 
 
 # ── Chart 3: iCAC over time ─────────────────────────────────────────────────
-def fig_icac_time(df: pd.DataFrame, benchmark: float) -> go.Figure:
-    fig = go.Figure()
+def fig_icac_time(df: pd.DataFrame, benchmark: float,
+                  spend_df: pd.DataFrame | None = None,
+                  spend_col: str = "meta_web_spend") -> go.Figure:
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["hi95"], mode="lines",
         line=dict(width=0), showlegend=False, hoverinfo="skip",
-    ))
+    ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["lo95"], mode="lines",
         line=dict(width=0), fill="tonexty", fillcolor=BLUE_FILL,
         name="95% CI", hoverinfo="skip",
-    ))
+    ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["mean"], mode="lines",
         line=dict(color=BLUE, width=2),
         name="Posterior mean iCAC",
         hovertemplate="Week: %{x|%Y-%m-%d}<br>iCAC: $%{y:,.0f}<extra></extra>",
-    ))
+    ), secondary_y=False)
     fig.add_hline(y=benchmark, line_dash="dash", line_color=ORANGE,
                   annotation_text=f"Lift test ${benchmark:.0f}", annotation_position="bottom right")
 
+    if spend_df is not None and not spend_df.empty and spend_col in spend_df.columns:
+        fig.add_trace(go.Scatter(
+            x=spend_df["date"], y=spend_df[spend_col], mode="lines",
+            line=dict(color=GRAY, width=1.5, dash="dash"),
+            name="Weekly spend (right)",
+            hovertemplate="Week: %{x|%Y-%m-%d}<br>Spend: $%{y:,.0f}<extra></extra>",
+        ), secondary_y=True)
+
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="iCAC Over Time — Meta Web<br><sub>Weekly posterior mean + 95% CI</sub>",
+        title=dict(text="iCAC Over Time — Meta Web<br><sub>Weekly posterior mean + 95% CI · spend overlay</sub>",
                    font=dict(size=14)),
         xaxis_title="Week",
-        yaxis_title="iCAC ($ per conversion)",
         height=380,
     )
-    fig.update_yaxes(tickprefix="$", tickformat=",.0f")
+    fig.update_yaxes(title_text="iCAC ($ per conversion)", tickprefix="$",
+                     tickformat=",.0f", secondary_y=False)
+    fig.update_yaxes(title_text="Weekly Spend ($)", tickprefix="$",
+                     tickformat=",.0f", secondary_y=True, showgrid=False)
     return fig
 
 
 # ── Chart 4: iROAS over time ────────────────────────────────────────────────
-def fig_iroas_time(df: pd.DataFrame) -> go.Figure:
-    fig = go.Figure()
+def fig_iroas_time(df: pd.DataFrame,
+                   spend_df: pd.DataFrame | None = None,
+                   spend_col: str = "meta_web_spend") -> go.Figure:
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["hi95"], mode="lines",
         line=dict(width=0), showlegend=False, hoverinfo="skip",
-    ))
+    ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["lo95"], mode="lines",
         line=dict(width=0), fill="tonexty", fillcolor=ORANGE_FILL,
         name="95% CI", hoverinfo="skip",
-    ))
+    ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["mean"], mode="lines",
         line=dict(color=ORANGE, width=2),
         name="Posterior mean iROAS",
         hovertemplate="Week: %{x|%Y-%m-%d}<br>iROAS: %{y:.3f}x<extra></extra>",
-    ))
+    ), secondary_y=False)
     fig.add_hline(y=1.0, line_dash="dash", line_color=GRAY,
                   annotation_text="Break-even (1.0x)", annotation_position="bottom right")
 
+    if spend_df is not None and not spend_df.empty and spend_col in spend_df.columns:
+        fig.add_trace(go.Scatter(
+            x=spend_df["date"], y=spend_df[spend_col], mode="lines",
+            line=dict(color=GRAY, width=1.5, dash="dash"),
+            name="Weekly spend (right)",
+            hovertemplate="Week: %{x|%Y-%m-%d}<br>Spend: $%{y:,.0f}<extra></extra>",
+        ), secondary_y=True)
+
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="iROAS Over Time — Meta Web<br><sub>Weekly posterior mean + 95% CI</sub>",
+        title=dict(text="iROAS Over Time — Meta Web<br><sub>Weekly posterior mean + 95% CI · spend overlay</sub>",
                    font=dict(size=14)),
         xaxis_title="Week",
-        yaxis_title="iROAS (LTV $ per $ spent)",
         height=380,
     )
+    fig.update_yaxes(title_text="iROAS (LTV $ per $ spent)", secondary_y=False)
+    fig.update_yaxes(title_text="Weekly Spend ($)", tickprefix="$",
+                     tickformat=",.0f", secondary_y=True, showgrid=False)
     return fig
 
 
@@ -209,7 +233,23 @@ def fig_ltv_time(df: pd.DataFrame) -> go.Figure:
 
 
 # ── Chart 6: iCAC Saturation Curve ─────────────────────────────────────────
-def fig_icac_saturation(df: pd.DataFrame, median_spend: float, benchmark: float) -> go.Figure:
+def _spend_histogram(spend_df: pd.DataFrame | None, spend_col: str, x_max: float):
+    """Return (centers, widths, counts) for a 10-bin histogram of observed weekly spend."""
+    if spend_df is None or spend_df.empty or spend_col not in spend_df.columns:
+        return None, None, None
+    weekly = spend_df.loc[spend_df[spend_col] > 0, spend_col].to_numpy()
+    if len(weekly) == 0:
+        return None, None, None
+    edges = np.linspace(0, x_max, 11)
+    counts, _ = np.histogram(weekly, bins=edges)
+    centers = (edges[:-1] + edges[1:]) / 2
+    widths = np.diff(edges)
+    return centers, widths, counts
+
+
+def fig_icac_saturation(df: pd.DataFrame, median_spend: float, benchmark: float,
+                        spend_df: pd.DataFrame | None = None,
+                        spend_col: str = "meta_web_spend") -> go.Figure:
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     valid = df["icac_mean"].notna()
@@ -218,6 +258,16 @@ def fig_icac_saturation(df: pd.DataFrame, median_spend: float, benchmark: float)
     lo = df.loc[valid, "icac_lo95"]
     hi = df.loc[valid, "icac_hi95"]
     ltv = df.loc[valid, "ltv_mean"] / 1e6
+
+    centers, widths, counts = _spend_histogram(spend_df, spend_col, x_max=float(x.max()))
+    if counts is not None:
+        fig.add_trace(go.Bar(
+            x=centers, y=counts, width=widths,
+            marker=dict(color="rgba(107,114,128,0.25)", line=dict(width=0)),
+            name="Observed weeks (right)",
+            yaxis="y3",
+            hovertemplate="Spend bin center: $%{x:,.0f}<br>Weeks: %{y}<extra></extra>",
+        ))
 
     fig.add_trace(go.Scatter(
         x=x, y=hi, mode="lines", line=dict(width=0),
@@ -252,21 +302,32 @@ def fig_icac_saturation(df: pd.DataFrame, median_spend: float, benchmark: float)
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="iCAC Saturation Curve — Meta Web<br><sub>Spend vs. marginal iCAC (diminishing returns)</sub>",
+        title=dict(text="iCAC Saturation Curve — Meta Web<br><sub>Spend vs. marginal iCAC · histogram = observed weeks per spend bin</sub>",
                    font=dict(size=14)),
         xaxis_title="Weekly Spend ($)",
         height=420,
+        bargap=0.05,
     )
+    if counts is not None:
+        fig.update_layout(yaxis3=dict(
+            title=dict(text="Observed spend (weeks)", font=dict(color="rgba(107,114,128,0.7)", size=11)),
+            overlaying="y", side="right", position=0.96,
+            range=[0, float(counts.max()) * 4],
+            showgrid=False, anchor="free",
+            tickfont=dict(color="rgba(107,114,128,0.7)", size=10),
+        ))
     fig.update_xaxes(tickprefix="$", tickformat=",.0f")
     fig.update_yaxes(title_text="iCAC ($ per conversion)", tickprefix="$",
                      tickformat=",.0f", secondary_y=False, rangemode="tozero")
-    fig.update_yaxes(title_text="Expected LTV Attribution ($M/week)",
+    fig.update_yaxes(title_text="Expected LTV ($M/week)",
                      tickprefix="$", ticksuffix="M", tickformat=".3f", secondary_y=True)
     return fig
 
 
 # ── Chart 7: iROAS Saturation Curve ────────────────────────────────────────
-def fig_iroas_saturation(df: pd.DataFrame, median_spend: float) -> go.Figure:
+def fig_iroas_saturation(df: pd.DataFrame, median_spend: float,
+                         spend_df: pd.DataFrame | None = None,
+                         spend_col: str = "meta_web_spend") -> go.Figure:
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     valid = df["iroas_mean"].notna()
@@ -275,6 +336,16 @@ def fig_iroas_saturation(df: pd.DataFrame, median_spend: float) -> go.Figure:
     lo  = df.loc[valid, "iroas_lo95"]
     hi  = df.loc[valid, "iroas_hi95"]
     ltv = df.loc[valid, "ltv_mean"] / 1e6
+
+    centers, widths, counts = _spend_histogram(spend_df, spend_col, x_max=float(x.max()))
+    if counts is not None:
+        fig.add_trace(go.Bar(
+            x=centers, y=counts, width=widths,
+            marker=dict(color="rgba(107,114,128,0.25)", line=dict(width=0)),
+            name="Observed weeks (right)",
+            yaxis="y3",
+            hovertemplate="Spend bin center: $%{x:,.0f}<br>Weeks: %{y}<extra></extra>",
+        ))
 
     fig.add_trace(go.Scatter(
         x=x, y=hi, mode="lines", line=dict(width=0),
@@ -310,14 +381,23 @@ def fig_iroas_saturation(df: pd.DataFrame, median_spend: float) -> go.Figure:
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="iROAS Saturation Curve — Meta Web<br><sub>Spend vs. marginal iROAS (diminishing returns)</sub>",
+        title=dict(text="iROAS Saturation Curve — Meta Web<br><sub>Spend vs. marginal iROAS · histogram = observed weeks per spend bin</sub>",
                    font=dict(size=14)),
         xaxis_title="Weekly Spend ($)",
         height=420,
+        bargap=0.05,
     )
+    if counts is not None:
+        fig.update_layout(yaxis3=dict(
+            title=dict(text="Observed spend (weeks)", font=dict(color="rgba(107,114,128,0.7)", size=11)),
+            overlaying="y", side="right", position=0.96,
+            range=[0, float(counts.max()) * 4],
+            showgrid=False, anchor="free",
+            tickfont=dict(color="rgba(107,114,128,0.7)", size=10),
+        ))
     fig.update_xaxes(tickprefix="$", tickformat=",.0f")
     fig.update_yaxes(title_text="iROAS (LTV $ per $ spent)", rangemode="tozero", secondary_y=False)
-    fig.update_yaxes(title_text="Expected LTV Attribution ($M/week)",
+    fig.update_yaxes(title_text="Expected LTV ($M/week)",
                      tickprefix="$", ticksuffix="M", tickformat=".3f", secondary_y=True)
     return fig
 
