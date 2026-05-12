@@ -16,8 +16,10 @@ WHITE   = "#FFFFFF"
 CHARCOAL = "#333333"
 BG      = "#FFFFFF"
 
-from pathlib import Path
-OUT = str(Path(__file__).parent / "slide_07_output_flowchart.png")
+OUT = (
+    "/Users/yashtiwari/MSBA/Quarters/Spring_2026/capstone_team/"
+    "deliverables/midterm_presentation/assets/slide_07_output_flowchart.png"
+)
 
 # ── Content ────────────────────────────────────────────────────────────────────
 steps = [
