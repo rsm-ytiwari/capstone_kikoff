@@ -157,32 +157,38 @@ s3.metric("Total iROAS", f"{total_iroas:.3f}x")
 st.markdown("---")
 
 # ── Row 1: Baseline metrics ──────────────────────────────────────────────────
-st.markdown("#### Baseline Performance")
+st.markdown("#### Baseline Performance — full 93-week window")
+st.caption(
+    "Baseline values are the **aggregate** across all 93 weeks (not affected by the time-period toggle above, "
+    "which only filters the per-week visualizations). iCAC headline is the posterior **median** (the posterior is "
+    "right-skewed so the mean is in the tail — see `meta_web_baseline.json:icac_mean_skewed` for the audit value)."
+)
 col1, col2 = st.columns(2)
 
 with col1:
     st.plotly_chart(fig_icac_baseline(baseline), use_container_width=True, config=CONFIG)
     with st.expander("Reading this chart"):
         st.caption(
-            f"Baseline iCAC: **${baseline['icac_mean']:,.0f}** — the average cost to generate one "
-            f"implied customer conversion, attributed to Meta Web, across the full 93-week model window. "
-            f"The lift test benchmark (${benchmark:.0f}) is from the May 2025 Meta lift experiment. "
-            f"The Northbeam reference (${baseline['northbeam_icac_ref']:.0f}) is their 52-week "
-            f"Conversions mode average. Our model measures marginal attribution at observed spend levels, "
-            f"which is typically higher than Northbeam's volume-weighted average."
+            f"**Baseline iCAC ${baseline['icac_mean']:,.0f}** (posterior median; 94% HDI "
+            f"${baseline['icac_hdi_lo']:,.0f}–${baseline['icac_hdi_hi']:,.0f}) — implied dollar cost per conversion "
+            f"attributed to Meta Web by Model 2 (y=LTV_3YEAR), computed as sum(spend) / (sum(LTV_contribution) / avg_LTV). "
+            f"Lift-test reference ${benchmark:.0f} is the May 2025 Meta lift experiment Web cell; "
+            f"Northbeam ${baseline['northbeam_icac_ref']:.0f} is their 52-week Conversions-mode average for FB Web. "
+            f"Both references sit well below our model — the saturation framing (Meeting 5) interprets the gap as "
+            f"the model fitting marginal efficiency at full-scale spend, not as an accuracy gap."
         )
 
 with col2:
     st.plotly_chart(fig_iroas_baseline(baseline), use_container_width=True, config=CONFIG)
     with st.expander("Reading this chart"):
         st.caption(
-            f"Baseline iROAS: **{baseline['iroas_mean']:.3f}x** — for each dollar spent on Meta Web, "
-            f"the model attributes this much in 3-year LTV. The Northbeam reference ({baseline['northbeam_iroas_ref']}x) "
-            f"is from their 26-week LTV mode view. The gap reflects two factors: (1) the May 2025 lift "
-            f"test was conducted at above-median spend ($628K/week vs $444K median), measuring diminishing-returns "
-            f"efficiency; (2) with 19 channels competing, credit is spread across the full spend portfolio. "
-            f"Abheek's MMM uses this model as one of three signals — directional alignment matters more than "
-            f"exact match."
+            f"**Baseline iROAS {baseline['iroas_mean']:.3f}x** (posterior mean; 94% HDI "
+            f"{baseline['iroas_hdi_lo']:.3f}–{baseline['iroas_hdi_hi']:.3f}) — LTV dollars attributed per dollar of spend. "
+            f"{baseline['iroas_below_breakeven_pct']:.0f}% of posterior mass sits below 1.0× break-even. "
+            f"Northbeam reference {baseline['northbeam_iroas_ref']}x is their 26-week LTV-mode view; "
+            f"the 5.6× gap reflects (a) the lift test ran at >$650K/week (above-median, diminishing-returns regime), "
+            f"and (b) 19 modeled channels split credit. Abheek triangulates this with two other models; directional "
+            f"alignment matters more than exact match."
         )
 
 # ── Row 2: Time series ───────────────────────────────────────────────────────
@@ -250,29 +256,30 @@ iroas_26w = _mean_in_window(iroas_time_df, 26, "mean")
 icac_delta_pct  = (icac_5w / icac_26w - 1.0) * 100  if icac_26w  else 0.0
 iroas_delta_pct = (iroas_5w / iroas_26w - 1.0) * 100 if iroas_26w else 0.0
 
-# Model 1 (Conversions) iCAC point estimate from 08b-v2 (see state/model_approach.md)
-MODEL1_ICAC_META_WEB = 759
-NORTHBEAM_ICAC_52WK  = baseline["northbeam_icac_ref"]   # 274
-LIFT_BENCH_WEB       = benchmark                         # 156.89
+# Cross-reference point estimates
+MODEL1_ICAC_META_WEB     = 759           # Model 1 Conversions iCAC (script 08b-v2, model_approach.md)
+MODEL2_ICAC_META_WEB     = baseline["agg_iCAC_script09"]  # 652.11 (script 09 aggregate, Model 2 LTV)
+NORTHBEAM_ICAC_52WK      = baseline["northbeam_icac_ref"]
+LIFT_BENCH_WEB           = benchmark
 
 decisioning_rows = [{
     "A · Channel": "Meta Web",
     "B · Spend Signal": "Very High (largest single channel; ~30% share of total weekly spend)",
     "C · iCAC / Trend": (
-        f"Model 1 (Conv): ${MODEL1_ICAC_META_WEB} · "
-        f"5WK avg ${icac_5w:,.0f} vs 26WK avg ${icac_26w:,.0f} "
-        f"({icac_delta_pct:+.0f}% vs 26WK)"
+        f"Model 2 (LTV) agg iCAC ${MODEL2_ICAC_META_WEB:.0f} · Model 1 (Conv) ${MODEL1_ICAC_META_WEB} · "
+        f"5WK avg ${icac_5w:,.0f} vs 26WK avg ${icac_26w:,.0f} ({icac_delta_pct:+.0f}%)"
     ),
     "D · iROAS Trend": (
+        f"Baseline {baseline['iroas_mean']:.3f}x · "
         f"5WK avg {iroas_5w:.3f}x vs 26WK avg {iroas_26w:.3f}x "
-        f"({iroas_delta_pct:+.0f}% vs 26WK); 100% of posterior below break-even"
+        f"({iroas_delta_pct:+.0f}%); 100% of posterior below 1.0× break-even"
     ),
-    "E · Confidence (Trust)": "🔴 Low — under saturation confound; gates lifted to PASS only for meta_ios + ctv",
+    "E · Confidence (Trust)": "🔴 Low — under saturation confound; only meta_ios + ctv passed Model 2 lift-test gate",
     "F · Saturation Read": (
-        f"Past saturation. Model iCAC ${MODEL1_ICAC_META_WEB} vs Northbeam 52WK ${NORTHBEAM_ICAC_52WK:.0f} "
-        f"({MODEL1_ICAC_META_WEB/NORTHBEAM_ICAC_52WK:.1f}× separation) and lift test ${LIFT_BENCH_WEB:.0f} "
-        f"({MODEL1_ICAC_META_WEB/LIFT_BENCH_WEB:.1f}× separation). Lift test ran at ~1/70th typical spend — measures marginal efficiency, "
-        "not full-scale; model fits full-scale spend → saturation regime."
+        f"Past saturation. Model 2 agg iCAC ${MODEL2_ICAC_META_WEB:.0f} vs Northbeam 52WK ${NORTHBEAM_ICAC_52WK:.0f} "
+        f"({MODEL2_ICAC_META_WEB/NORTHBEAM_ICAC_52WK:.1f}× separation), Model 1 ${MODEL1_ICAC_META_WEB} "
+        f"({MODEL1_ICAC_META_WEB/NORTHBEAM_ICAC_52WK:.1f}×). Lift test ran at ~1/70th typical spend (measured marginal efficiency at test point); "
+        "model fits full-scale spend → diminishing-returns regime."
     ),
     "G · Recommended Action": (
         "Hold on to any changes unless documents and guardrails are in place or proved by incrementality."
