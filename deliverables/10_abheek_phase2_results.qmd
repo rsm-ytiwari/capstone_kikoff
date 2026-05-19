@@ -1,0 +1,229 @@
+---
+title: "Phase 2 Update — Full-Channel Models"
+subtitle: "Kikoff MMM · Conversions Model + LTV Model"
+date: 2026-05-12
+author: "Data Science Team"
+format:
+  revealjs:
+    css: custom-reveal.css
+    slide-number: true
+    theme: default
+    transition: none
+    width: 1280
+    height: 800
+    center: false
+    scrollable: true
+    embed-resources: true
+    execute:
+      echo: false
+      warning: false
+---
+
+## What you corrected last time, and what we rebuilt {.smaller}
+
+**In Meeting 5 you told us two things that changed our direction.**
+
+| Your correction | What we did |
+|---|---|
+| Modeling only Meta (3 channels) while LTV reflects all-channel spend → **omitted-variable bias** | Rebuilt with **all 19 channels** in one model |
+| "One channel" referred to **output plots**, not model scope | Model fits all channels; per-channel outputs come downstream |
+| Need **two models** — conversions and 3-year LTV | Built Model 1 (`scripts/08b_...py`) and Model 2 (`scripts/09_ltv_model.py`) |
+| Aggregate to weekly | Both models fit on **93 weekly observations** (W-MON rollup) |
+| 50% accuracy acceptable; directional outputs are the goal | We report all gate pass/fail honestly — no smoothing over failures |
+
+We carried forward the iOS pacing diagnosis from our prior work (r=0.48 between iOS spend and total conversions) but rebuilt the lift-prior mechanism around it. That mechanism — and what it does and doesn't fix — is the core of today's discussion.
+
+---
+
+## Inputs — what goes into the model {.smaller}
+
+| Input | Choice | Rationale |
+|---|---|---|
+| **Time window** | 2024-07-01 → 2026-03-31 (93 weekly rows) | Q3 2024+ confirmed in Meeting 3 as clean channel-level data; cutoff at last complete month |
+| **Aggregation** | Weekly, summed (Monday-start) | Meeting 5 directive |
+| **Channels (X)** | All **19** (apple_search, applovin iOS/Android, ctv, dsp, google iOS/Android/Web, influencer, liftoff, linear_tv, meta iOS/Android/Web, others, podcast, tiktok iOS/Android/Web) | Meeting 5 — subset modeling is OVB |
+| **Model 1 — Y** | Weekly **CONVERSIONS** (count) | Directly comparable to lift-test benchmarks (which are in conversion counts) |
+| **Model 2 — Y** | Weekly **LTV_3YEAR** (summed, dollars) | Kikoff's pre-predicted 3-year LTV; weekly sum (not avg) — pending your confirmation |
+| **Lift tests included (7)** | Meta May 2025 (iOS/Android/Web) · TikTok Aug–Sep 2025 (iOS/Android/Web) · CTV Oct–Nov 2025 | The four holdouts confirmed with clean windows |
+| **Lift test excluded** | Meta Jan 2026 | Study cancelled at 3 days; 10 iOS conversions; ~$1,350 iCAC — zero useful signal |
+| **iOS / Android split** | "iOS and android" rows assigned to **iOS only** (~35 rows) | Working assumption — **pending your confirmation today (Q22)** |
+| **LTV imputation** | 2025-10-21 → 2025-10-24 patched with 14-day centered rolling median | Same z=3.78 anomaly window we showed in Phase 1 |
+
+12 of 19 channels have **no incrementality anchor** — their iCACs are correlation-only. Flagged Low confidence.
+
+---
+
+## The model — architecture for both Model 1 and Model 2 {.smaller}
+
+**Identical architecture. Only Y differs.**
+
+| Component | Specification | Definition |
+|---|---|---|
+| Framework | PyMC-Marketing 0.19.3 | Standard Bayesian MMM library |
+| Adstock | `GeometricAdstock(l_max=8)` | Ad effects carry up to 8 weeks, decaying exponentially. `l_max=8` chosen because CTV has a 6-week half-life per your incrementality CSV |
+| Saturation | `LogisticSaturation()` | Diminishing returns — each extra spend dollar buys less as channel scales |
+| Priors | **PyMC-Marketing library defaults** for adstock alpha, saturation lam/beta, intercept | We did not assert custom priors for the 12 untested channels — no experimental grounding to do so |
+| Lift-test mechanism | **Mechanism 2** (windowed) — `pm.Normal` observations on the **sum of channel contribution across each test's own date window** | See next slide |
+| Lift-test sigma | CTV: **373** (CI-derived from 95% CI [1109, 2570]) · Meta May: **30% of point estimate** · TikTok: **30% of point estimate** | The CSV provides only CTV's explicit CI. Meta May reports a **99.9% confidence score** (a significance level, not a CI); 30% sigma is approximately the implied upper bound (`sigma < effect/3.29`). TikTok provides **no confidence statement at all**; 30% there is a heuristic with no statistical anchor. |
+| MCMC | `draws=1000, tune=2000, target_accept=0.98, chains=4, seed=42` | High tune + target_accept after lower settings produced divergences |
+
+**Reference code:**
+
+```python
+mmm = MMM(
+    adstock=GeometricAdstock(l_max=8),
+    saturation=LogisticSaturation(),
+    date_column="date",
+    channel_columns=channel_columns,  # 19 channels
+)
+mmm.build_model(X_weekly, y_weekly)
+```
+
+---
+
+## Mechanism 2 — what's actually different {.smaller}
+
+The novel piece. Our previous attempt (Mechanism 3) used the library's built-in `add_lift_test_measurements()`, which constrains the saturation parameters **globally** across all 93 weeks. That conflated the lift-test signal with the iOS pacing confound — gates failed.
+
+**Mechanism 2 restricts each lift-test observation to only the weeks the test actually ran.**
+
+```python
+with mmm.model:
+    ocs = mmm.model["channel_contribution_original_scale"].values
+    for label, ch, t_start, t_end, delta_y, sigma in LIFT_TESTS:
+        chan_idx   = channel_columns.index(ch)
+        window_idx = window_index_map[label]            # the test's weeks only
+        windowed_contrib = ocs[window_idx, chan_idx].sum()
+        pm.Normal(
+            f"lift_{label}",
+            mu=windowed_contrib,
+            sigma=sigma,
+            observed=delta_y,
+        )
+```
+
+| Aspect | Mechanism 3 (prior attempt) | Mechanism 2 (current) |
+|---|---|---|
+| Where lift evidence applies | All 93 weeks (global saturation prior) | Only the test's own weeks |
+| iOS pacing confound | Conflated with lift signal → gates failed | Mitigated **inside** test windows |
+| **What it does NOT fix** | — | Outside the test window, the r=0.48 iOS pacing correlation still bleeds in. The iOS > Android ordering gate still fails. |
+
+This is the mechanism we believe satisfies the "time-limited priors" directive from Meeting 4 — confirming this with you closes Q19.
+
+---
+
+## Outputs — both models, side by side {.smaller}
+
+| Gate | Threshold | Model 1 (Conv) | Model 2 (LTV) | Verdict |
+|---|---|---|---|---|
+| Rhat (chain convergence) | < 1.05 | **1.009** | **1.011** | Both PASS |
+| ESS (effective samples) | > 400 | 363 | 268 | **Both BELOW threshold** |
+| Divergences | < 50 | 2 | 35 | Both within tolerance |
+| Baseline % | < 80% | 35.1% | 53.5% | Both PASS |
+| **Channel iCAC ±50% of benchmark** | per-channel | **2 of 7 PASS** | **2 of 7 PASS** | Same pattern |
+| iOS > Android ordering | iOS more expensive | FAIL ($176 < $197) | FAIL ($173 < $176) | Both FAIL |
+
+**Per-channel iCAC table (Model 2 / LTV):**
+
+| Channel | Model 2 iCAC | Benchmark | ±50% window | Pass? |
+|---|---|---|---|---|
+| meta_ios | $173 | $135 | $68 – $203 | ✓ |
+| ctv | $139 | $135 | $68 – $203 | ✓ |
+| meta_android | $176 | $63 | $32 – $95 | ✗ (above) |
+| meta_web | $652 | $157 | $78 – $235 | ✗ (above) |
+| tiktok_ios | $417 | $109 | $54 – $163 | ✗ (above) |
+| tiktok_android | $156 | $82 | $41 – $123 | ✗ (above) |
+| tiktok_web | $301 | $112 | $56 – $168 | ✗ (above) |
+
+Model 1 iCACs sit a few percent higher across the board (meta_web $759, tiktok_web $426, etc.); the pattern is the same.
+
+---
+
+## The five iCAC failures — our interpretation, not a verdict {.smaller}
+
+**All five failing channels miss the benchmark by being *above* it, not below. That uniformity is informative.**
+
+Our working hypothesis: the lift tests measured marginal iCAC at a small spend slice, while the model is fitting saturation across the full historical spend range. For example:
+
+- Meta Web spends roughly **$47K/day typical** over 93 weeks.
+- The May 2025 lift test ran at a 12% holdout — roughly **$650/day**.
+- Test-point iCAC and full-scale model iCAC measure different points on a saturation curve.
+- This is what your decisioning sheet's "Saturation Read" column is designed to capture.
+
+**Independent reference points:**
+
+| Source | Meta Web | Unit |
+|---|---|---|
+| Northbeam 52WK | $274 | iCAC (volume-weighted conversion mode) |
+| Model 1 aggregate | $759 | iCAC (model conversion-mode at full-scale spend) |
+| Model 2 aggregate | $652 | iCAC (LTV / avg_ltv, full-scale spend) |
+
+**The honest read:** the model and the lift tests disagree, and that disagreement is consistent with saturation. But we are **not** declaring this the final word. We want your read on whether this interpretation is acceptable, or whether you want us to chase a tighter calibration in Phase 3.
+
+---
+
+## Five caveats to flag up front {.smaller}
+
+**1. Sigma derivation across lift tests is uneven.** CTV is straightforward: 95% CI [1109, 2570] in your CSV → sigma = $373. The other two tests are softer:
+
+- **Meta May 2025**: the CSV provides a **99.9% confidence score** (a significance level), not a confidence interval. That implies `sigma < effect / 3.29 ≈ 30% of effect`. We chose sigma = 30% of point estimate, which sits at that **implied upper bound** — so if anything our sigma is on the loose side, not the tight side. The true SE could be smaller.
+- **TikTok Aug 2025**: the CSV provides **no confidence score and no CI** — the Confidence Score column is blank. Our 30% sigma there is a heuristic with no statistical anchor.
+
+If you have the raw standard errors (or the unholdout-counterfactual control counts so we can compute them), we'd retighten Meta and TikTok sigmas tonight.
+
+**2. Twelve of nineteen channels have no incrementality anchor.** Apple Search, AppLovin iOS/Android, DSP, Google iOS/Android/Web, Influencer, Liftoff, Linear TV, Others, Podcast — their iCAC values reflect time-series correlation only. They are flagged Low confidence in the Confidence column.
+
+**3. ESS below threshold in both models.** ESS 363 (Model 1) and 268 (Model 2) are below our 400 gate. This is **slow mixing**, not a convergence failure — Rhat shows the chains agree. The cause is correlated adstock and saturation parameters across 19 channels with overlapping spend timing. Confidence bands stay valid; they are slightly wider than ideal. A non-centered reparameterization is a Phase 3 candidate.
+
+**4. iOS > Android ordering still fails.** Both models say Android costs more than iOS. The lift tests say the opposite (iOS $135, Android $63). Mechanism 2 mitigates this **inside** test windows but the r=0.48 iOS pacing correlation persists outside the window and bleeds back in. We do not have a clean fix for this within the current architecture.
+
+**5. Rhat gate threshold.** We use **Rhat < 1.05** (Vehtari et al. 2021 — current ArviZ "acceptable" standard). Stricter journal practice uses < 1.01; Model 2 would fail at that bar (1.011). Disclosing on request, but not adopting the stricter threshold given Meeting 5's "directional outputs" goal.
+
+---
+
+## Three things we'd like you to confirm today {.smaller}
+
+These three answers unblock our locked decision log and Phase 3 planning.
+
+### Q22 — iOS / Android attribution
+
+> Rows labeled `"iOS and android"` (~35 rows) are currently assigned **fully to iOS** in both models. Tentative decision D016. Can you confirm? If the actual split is different, both models need a rerun — but it's a preprocessing change, not an architectural one.
+
+### Q24 — Weekly LTV aggregation
+
+> Model 2's Y is the **sum** of `LTV_3YEAR` per week (each customer's projected 3-year value summed across customers acquired that week), not an average. Tentative decision D017. Confirm?
+
+### Q19a — Does Mechanism 2 satisfy "time-limited priors"?
+
+> Mechanism 2 applies each lift test's evidence **only during the weeks the test ran**, not as a global constraint across the 93-week history. This is our interpretation of the time-limited priors directive from Meeting 4. Do you agree this satisfies it, or did you have a different mechanism in mind?
+
+---
+
+## What's next + what would unblock us {.smaller}
+
+**Next sprint (this week):**
+
+- Per-channel output charts in the format you walked through (iCAC over time, iROAS over time, spend distribution, saturation curve with observed-spend overlay, confidence bands). One channel first — Meta Web — then replicate across the rest.
+- Decisioning sheet — 8-column structure (A–H) populated from posterior diagnostics.
+- Dashboard demo next.
+
+**Two things from you that would directly unblock the next sprint:**
+
+1. **Raw confidence intervals** on the Meta and TikTok lift tests, if available, so we can replace the 30% heuristic with CI-derived sigmas.
+2. **Confirmation on Q22 / Q24 / Q19a** so we can promote the current approach into our locked decision log.
+
+---
+
+## Reference files {.smaller}
+
+| What | Where |
+|---|---|
+| Model 1 fit script (y=CONVERSIONS) | `scripts/08b_mechanism2_more_tune.py` |
+| Model 2 fit script (y=LTV_3YEAR) | `scripts/09_ltv_model.py` |
+| Baseline (no lift priors) reference | `scripts/07_full_channel_baseline.py` |
+| Model 1 gate results | `outputs/P2_04_full_channel/metrics/mechanism2b_convergence.json` |
+| Model 2 gate results | `outputs/P2_04_full_channel/metrics/ltv_convergence.json` |
+| Approach history (incl. Mechanism 3 failure) | `state/model_approach.md` |
+| Meeting 5 facts | `meetings/refined/2026-05-06_client_fifth_meet_refined.md` |
+
+*End of Phase 2 update — proceeding to dashboard walkthrough.*

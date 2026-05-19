@@ -1,5 +1,16 @@
 .reveal {
   font-size: 26px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* GPU-accelerate the slide stack so CSS transform: scale() doesn't blur text */
+.reveal .slides {
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 .reveal h1 {
   font-size: 1.6em;
@@ -49,14 +60,12 @@
   font-weight: 600;
 }
 
-/* ── Content box ─────────────────────────────────────────────────────────── */
-/* Each content slide is a visually bounded, scrollable box.                 */
-/* Uses all available slide space; content scrolls inside rather than clips. */
+/* ── Content panel ───────────────────────────────────────────────────────── */
+/* Plain white panel — no shadow, no rounded corners. Scrolls if content     */
+/* overflows so nothing is clipped.                                          */
 .reveal .slides section.level2 {
-  border: 1.5px solid #dde3ea;
-  border-radius: 6px;
-  background: #fdfdfd;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #d8dde3;
+  background: #ffffff;
   padding: 16px 28px !important;
   box-sizing: border-box;
   overflow-y: auto !important;
