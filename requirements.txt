@@ -1,12 +1,4 @@
-pymc-marketing==0.19.3
-pymc==5.28.4
-pytensor==2.38.2
-arviz==0.23.4
-pandas==3.0.2
-numpy==2.4.4
-matplotlib==3.10.8
-scipy==1.17.1
-xarray==2026.4.0
-marimo
-python-docx==1.2.0
-# Quarto for rendering: install via https://quarto.org/docs/get-started/ (not pip)
+streamlit>=1.35.0
+plotly>=5.22.0
+pandas>=2.0.0
+numpy>=1.26.0
