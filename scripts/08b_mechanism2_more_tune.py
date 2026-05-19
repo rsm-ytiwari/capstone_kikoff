@@ -63,36 +63,50 @@ print(f"OUT_P2_04:  {OUT_P2_04}\n")
 # Lift test reference table (from Kikoff_data_incrementality.csv)
 # Format: (label, channel_col, test_start_inclusive, test_end_inclusive,
 #           delta_y_conversions, sigma_conversions)
+#
+# M3.5b 2026-05-19: lift δ_y and σ scaled to W-MON window basis (Fix-A)
+# — see proposals/2026-05-19_d027_window_basis_correction.md.
+# Background: I-7 reconciliation (drafts/i7_window_reconciliation_2026-05-18.md)
+# found the windowed-iCAC gate was comparing N-day model spend (full W-MON
+# weeks overlapping a test) against k-day lift-test conversions, mechanically
+# inflating iCAC by ~N/k. Fix-A scales each row's δ_y and σ by (W-MON window
+# days / test days inclusive) so the prior speaks in the same temporal basis
+# as the model's weekly contributions.
+#
+# Per-test scaling factors:
+#   Meta May 2025:   8-day test  → 14-day window (2 W-MON weeks)   × 14/8  = 1.75
+#   TikTok Aug 2025: 24-day test → 28-day window (4 W-MON weeks)   × 28/24 ≈ 1.167
+#   CTV Oct 2025:    27-day test → 28-day window (4 W-MON weeks)   × 28/27 ≈ 1.037
+#   Meta Jan 2026:   5-day test  → 14-day window (2 W-MON weeks)   × 14/5  = 2.8
+#
 # sigma:
-#   Meta May 2025 + TikTok Aug 2025: σ = 10% of δ_y (Path B per D022,
-#     literature-aligned default).
-#     σ-ladder diagnostic 2026-05-18: 30% (old) → 10% (Meta Web $652→$466,
-#     R-hat/ESS pass) → 5% (Meta Web $466→$455, R-hat 1.107/ESS 27 FAIL).
-#     σ=5% diagnostic preserved at metrics/mechanism2b_convergence_sigma5_diagnostic.json.
-#     Conclusion: σ is not the lever — Meta Web's elevated iCAC is structural
-#     (saturation at full-scale spend vs test-window measurement; the lift
-#     test ran at 1/70th typical Meta Web spend). σ=10% reverted as canonical.
-#   CTV: σ = 373, CI-derived from 95% CI [1109, 2570] (D020 unchanged).
-#   Meta Jan 2026: σ = 3 × max(δ_y, 30) — deliberately wide (D019-rev,
+#   Meta May 2025 + TikTok Aug 2025: σ = 10% of (scaled δ_y) (Path B per D022,
+#     literature-aligned default). σ-ladder 2026-05-18 (pre-Fix-A): 30% → 10%
+#     → 5%; 5% degraded convergence (R-hat 1.107 / ESS 27 FAIL), 10% retained.
+#   CTV: σ scaled proportionally from CI-derived 373 → 386.8 (D020 unchanged
+#     in spirit; magnitude scales with δ_y).
+#   Meta Jan 2026: σ = 3 × max(scaled δ_y, 30) — deliberately wide (D019-rev,
 #     cancelled study; include for completeness, not as a tight constraint).
 # Test ends are inclusive (end_exclusive - 1 day from the CSV).
+# Originals (pre-Fix-A) preserved in mechanism2b_convergence.json (canonical
+# M3.5 reference snapshot — do not overwrite).
 # ---------------------------------------------------------------------------
 LIFT_TESTS = [
-    # Meta May 2025 — Kikoff_LiftStudy_0525 (99.9% confidence; Path B σ = 10% δ_y).
-    ("meta_ios_may25",     "meta_ios",      "2025-05-06", "2025-05-13",  1_156.0,  115.6),
-    ("meta_android_may25", "meta_android",  "2025-05-06", "2025-05-13",  1_405.0,  140.5),
-    ("meta_web_may25",     "meta_web",      "2025-05-06", "2025-05-13",  1_128.0,  112.8),
-    # TikTok Aug-Sep 2025 (holdout 3-cell; Path B σ = 10% δ_y).
-    ("tiktok_ios_aug25",     "tiktok_ios",     "2025-08-22", "2025-09-14",    569.0,   56.9),
-    ("tiktok_android_aug25", "tiktok_android", "2025-08-22", "2025-09-14",    651.0,   65.1),
-    ("tiktok_web_aug25",     "tiktok_web",     "2025-08-22", "2025-09-14",  6_215.0,  621.5),
-    # CTV Oct-Nov 2025 (geo lift, 50% holdout, 95% CI). σ unchanged at 373 (D020).
-    ("ctv_oct25",          "ctv",           "2025-10-06", "2025-11-01",  1_840.0,  373.0),
-    # Meta Jan 2026 — Kick Off January CLS-BLS (cancelled; D019-reversal).
-    # Wide σ (3× max(δ_y, 30)) keeps the prior present but barely informative.
-    ("meta_ios_jan26",     "meta_ios",      "2026-01-03", "2026-01-07",     10.0,    90.0),
-    ("meta_android_jan26", "meta_android",  "2026-01-03", "2026-01-07",    365.0, 1_095.0),
-    ("meta_web_jan26",     "meta_web",      "2026-01-03", "2026-01-07",  1_122.0, 3_366.0),
+    # Meta May 2025 — 8d test, W-MON window 14d → scale 1.75 (δ_y and σ).
+    ("meta_ios_may25",     "meta_ios",      "2025-05-06", "2025-05-13",  2_023.0,   202.3),
+    ("meta_android_may25", "meta_android",  "2025-05-06", "2025-05-13",  2_459.0,   245.9),
+    ("meta_web_may25",     "meta_web",      "2025-05-06", "2025-05-13",  1_974.0,   197.4),
+    # TikTok Aug-Sep 2025 — 24d test, W-MON window 28d → scale 1.1667.
+    ("tiktok_ios_aug25",     "tiktok_ios",     "2025-08-22", "2025-09-14",     663.8,    66.4),
+    ("tiktok_android_aug25", "tiktok_android", "2025-08-22", "2025-09-14",     759.5,    75.95),
+    ("tiktok_web_aug25",     "tiktok_web",     "2025-08-22", "2025-09-14",   7_250.8,  725.08),
+    # CTV Oct-Nov 2025 — 27d test, W-MON window 28d → scale 1.037 (σ scales too).
+    ("ctv_oct25",          "ctv",           "2025-10-06", "2025-11-01",   1_908.0,   386.8),
+    # Meta Jan 2026 — 5d test, W-MON window 14d → scale 2.8.
+    # Wide σ rule preserved: σ = 3 × max(scaled δ_y, 30).
+    ("meta_ios_jan26",     "meta_ios",      "2026-01-03", "2026-01-07",      28.0,     90.0),
+    ("meta_android_jan26", "meta_android",  "2026-01-03", "2026-01-07",   1_022.0,  3_066.0),
+    ("meta_web_jan26",     "meta_web",      "2026-01-03", "2026-01-07",   3_142.0,  9_426.0),
 ]
 
 # ---------------------------------------------------------------------------
@@ -439,14 +453,17 @@ result = {
     "all_gates_pass": all_pass,
     "contribution_api_used": api_used,
     "notes": (
-        "Mechanism 2 windowed priors. M3.5 calibration: D019-rev (Meta Jan 2026 "
-        "re-included with wide σ), D021 (baseline <20% Kikoff-specific), D022 "
-        "(Path B σ = 10% of δ_y for Meta + TikTok), D023 (windowed-iCAC gate "
-        "replaces aggregate), D024 (iOS>Android ordering gate removed)."
+        "Mechanism 2 windowed priors. M3.5 calibration: D019-rev, D021, D022, "
+        "D023, D024. M3.5b 2026-05-19 Fix-A (D027 pending APPROVED): lift δ_y "
+        "and σ scaled by (W-MON window days / test days inclusive) to align "
+        "prior basis with model's weekly cadence. See "
+        "drafts/i7_window_reconciliation_2026-05-18.md and "
+        "proposals/2026-05-19_d027_window_basis_correction.md. Canonical M3.5 "
+        "(pre-Fix-A) snapshot preserved at mechanism2b_convergence.json."
     ),
 }
 
-out_path = OUT_P2_04 / "metrics" / "mechanism2b_convergence.json"
+out_path = OUT_P2_04 / "metrics" / "mechanism2b_window_scaled.json"
 with open(out_path, "w") as f:
     json.dump(result, f, indent=2)
 

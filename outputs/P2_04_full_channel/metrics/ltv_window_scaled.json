@@ -1,0 +1,262 @@
+{
+  "script": "09_ltv_model",
+  "model": "Model 2 (y=LTV_3YEAR)",
+  "weekly_obs": 93,
+  "n_channels": 19,
+  "channel_columns": [
+    "apple_search",
+    "applovin_android",
+    "applovin_ios",
+    "ctv",
+    "dsp",
+    "google_android",
+    "google_ios",
+    "google_web",
+    "influencer",
+    "liftoff",
+    "linear_tv",
+    "meta_android",
+    "meta_ios",
+    "meta_web",
+    "others",
+    "podcast",
+    "tiktok_android",
+    "tiktok_ios",
+    "tiktok_web"
+  ],
+  "avg_ltv_per_customer": 208.1199,
+  "lift_tests_applied": [
+    {
+      "label": "meta_ios_may25",
+      "channel": "meta_ios",
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y_conv": 2023.0,
+      "sigma_conv": 202.3,
+      "delta_y_ltv": 421026.51,
+      "sigma_ltv": 42102.65,
+      "n_weeks": 2
+    },
+    {
+      "label": "meta_android_may25",
+      "channel": "meta_android",
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y_conv": 2459.0,
+      "sigma_conv": 245.9,
+      "delta_y_ltv": 511766.78,
+      "sigma_ltv": 51176.68,
+      "n_weeks": 2
+    },
+    {
+      "label": "meta_web_may25",
+      "channel": "meta_web",
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y_conv": 1974.0,
+      "sigma_conv": 197.4,
+      "delta_y_ltv": 410828.64,
+      "sigma_ltv": 41082.86,
+      "n_weeks": 2
+    },
+    {
+      "label": "tiktok_ios_aug25",
+      "channel": "tiktok_ios",
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y_conv": 663.8,
+      "sigma_conv": 66.4,
+      "delta_y_ltv": 138149.97,
+      "sigma_ltv": 13819.16,
+      "n_weeks": 4
+    },
+    {
+      "label": "tiktok_android_aug25",
+      "channel": "tiktok_android",
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y_conv": 759.5,
+      "sigma_conv": 75.95,
+      "delta_y_ltv": 158067.05,
+      "sigma_ltv": 15806.7,
+      "n_weeks": 4
+    },
+    {
+      "label": "tiktok_web_aug25",
+      "channel": "tiktok_web",
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y_conv": 7250.8,
+      "sigma_conv": 725.08,
+      "delta_y_ltv": 1509035.61,
+      "sigma_ltv": 150903.56,
+      "n_weeks": 4
+    },
+    {
+      "label": "ctv_oct25",
+      "channel": "ctv",
+      "start": "2025-10-06",
+      "end": "2025-11-01",
+      "delta_y_conv": 1908.0,
+      "sigma_conv": 386.8,
+      "delta_y_ltv": 397092.73,
+      "sigma_ltv": 80500.77,
+      "n_weeks": 4
+    },
+    {
+      "label": "meta_ios_jan26",
+      "channel": "meta_ios",
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y_conv": 28.0,
+      "sigma_conv": 90.0,
+      "delta_y_ltv": 5827.36,
+      "sigma_ltv": 18730.79,
+      "n_weeks": 2
+    },
+    {
+      "label": "meta_android_jan26",
+      "channel": "meta_android",
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y_conv": 1022.0,
+      "sigma_conv": 3066.0,
+      "delta_y_ltv": 212698.51,
+      "sigma_ltv": 638095.54,
+      "n_weeks": 2
+    },
+    {
+      "label": "meta_web_jan26",
+      "channel": "meta_web",
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y_conv": 3142.0,
+      "sigma_conv": 9426.0,
+      "delta_y_ltv": 653912.65,
+      "sigma_ltv": 1961737.96,
+      "n_weeks": 2
+    }
+  ],
+  "convergence": {
+    "rhat_max": 1.004,
+    "ess_min": 2096.0,
+    "divergences": 0,
+    "rhat_gate_pass": true,
+    "ess_gate_pass": true
+  },
+  "baseline_pct": 0.6734,
+  "windowed_icac": {
+    "meta_ios": 137.19,
+    "meta_android": 85.18,
+    "meta_web": 276.45,
+    "tiktok_ios": 287.93,
+    "tiktok_android": 111.24,
+    "tiktok_web": 134.64,
+    "ctv": 138.64
+  },
+  "icac_aggregate_diagnostic": {
+    "apple_search": 283.86,
+    "applovin_android": 301.11,
+    "applovin_ios": 258.91,
+    "ctv": 138.83,
+    "dsp": 168.33,
+    "google_android": 656.64,
+    "google_ios": 146.7,
+    "google_web": 284.54,
+    "influencer": 50.6,
+    "liftoff": 68.52,
+    "linear_tv": 358.85,
+    "meta_android": 94.77,
+    "meta_ios": 132.88,
+    "meta_web": 292.66,
+    "others": 1.64,
+    "podcast": 56.28,
+    "tiktok_android": 120.77,
+    "tiktok_ios": 301.62,
+    "tiktok_web": 136.95
+  },
+  "iroas": {
+    "apple_search": 0.7332,
+    "applovin_android": 0.6912,
+    "applovin_ios": 0.8038,
+    "ctv": 1.4991,
+    "dsp": 1.2364,
+    "google_android": 0.3169,
+    "google_ios": 1.4186,
+    "google_web": 0.7314,
+    "influencer": 4.113,
+    "liftoff": 3.0373,
+    "linear_tv": 0.58,
+    "meta_android": 2.196,
+    "meta_ios": 1.5663,
+    "meta_web": 0.7111,
+    "others": 126.7765,
+    "podcast": 3.6978,
+    "tiktok_android": 1.7233,
+    "tiktok_ios": 0.69,
+    "tiktok_web": 1.5197
+  },
+  "benchmarks": {
+    "meta_ios": {
+      "point_estimate": 135.48,
+      "window_start": "2025-05-06",
+      "window_end": "2025-05-13",
+      "tolerance": 50.0
+    },
+    "meta_android": {
+      "point_estimate": 63.06,
+      "window_start": "2025-05-06",
+      "window_end": "2025-05-13",
+      "tolerance": 50.0
+    },
+    "meta_web": {
+      "point_estimate": 156.89,
+      "window_start": "2025-05-06",
+      "window_end": "2025-05-13",
+      "tolerance": 50.0
+    },
+    "tiktok_ios": {
+      "point_estimate": 108.83,
+      "window_start": "2025-08-22",
+      "window_end": "2025-09-14",
+      "tolerance": 50.0
+    },
+    "tiktok_android": {
+      "point_estimate": 81.68,
+      "window_start": "2025-08-22",
+      "window_end": "2025-09-14",
+      "tolerance": 50.0
+    },
+    "tiktok_web": {
+      "point_estimate": 112.12,
+      "window_start": "2025-08-22",
+      "window_end": "2025-09-14",
+      "tolerance": 50.0
+    },
+    "ctv": {
+      "point_estimate": 135.05,
+      "window_start": "2025-10-06",
+      "window_end": "2025-11-01",
+      "tolerance": 15.0
+    }
+  },
+  "gates": {
+    "gate_icac_windowed_meta_ios": true,
+    "gate_icac_windowed_meta_android": true,
+    "gate_icac_windowed_meta_web": false,
+    "gate_icac_windowed_tiktok_ios": false,
+    "gate_icac_windowed_tiktok_android": true,
+    "gate_icac_windowed_tiktok_web": true,
+    "gate_icac_windowed_ctv": true,
+    "gate_rhat_pass": true,
+    "gate_ess_pass": true,
+    "gate_baseline_pass": false
+  },
+  "all_gates_pass": false,
+  "contribution_api_used": "compute_mean_contributions_over_time",
+  "caveats": [
+    "Q22: iOS/Android 50/50 spend split unconfirmed by Abheek \u2014 iOS vs. Android LTV attribution may shift if actual allocation differs.",
+    "Q23: iOS pacing confound (r=0.48 with total conversions) carries into LTV model since LTV=f(conversions). Mechanism 2 windowed priors mitigate for tested channels but structural risk is not eliminated."
+  ],
+  "notes": "Model 2 \u2014 y=LTV_3YEAR (weekly sum, dollars). Mechanism 2 windowed priors. M3.5 calibration: D019-rev, D021, D022, D023, D024. M3.5b 2026-05-19 Fix-A (D027 pending APPROVED): lift \u03b4_y and \u03c3 scaled by (W-MON window days / test days inclusive) to align prior basis with model's weekly cadence; LTV-unit scaling propagates the factor via `* avg_ltv`. See drafts/i7_window_reconciliation_2026-05-18.md and proposals/2026-05-19_d027_window_basis_correction.md. Canonical M3.5 (pre-Fix-A) snapshot preserved at ltv_convergence.json + ltv_trace.nc. iCAC = spend / (ltv_contribution / avg_ltv). iROAS = ltv_contribution / spend."
+}

@@ -3,11 +3,17 @@ charts.py — Plotly figure builders for the Kikoff MMM dashboard.
 
 Each function accepts pre-loaded DataFrames/dicts and returns a go.Figure.
 Style conventions match Northbeam's dashboard aesthetic.
+
+All builders are channel-parametric: pass `channel="meta_web"`, `"ctv"`, etc.
+Titles + axis labels are built from CHANNEL_DISPLAY (imported below).
+Spend column defaults are derived as f"{channel}_spend".
 """
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+from app.data_loader import CHANNEL_DISPLAY
 
 # ── Style constants ─────────────────────────────────────────────────────────
 BLUE        = "#2563EB"
@@ -39,22 +45,34 @@ def _dollar_fmt(x: float) -> str:
 
 
 # ── Chart 1: Baseline iCAC ──────────────────────────────────────────────────
-def fig_icac_baseline(baseline: dict) -> go.Figure:
-    # baseline["icac_mean"] now holds the posterior MEDIAN of aggregate iCAC.
-    # iCAC posteriors are right-skewed (ratio of two positives) so median is the
-    # correct headline; the right-tail mean is preserved as icac_mean_skewed for audit.
+def fig_icac_baseline(baseline: dict, channel: str = "meta_web") -> go.Figure:
+    """Baseline iCAC bar + HDI whiskers.
+
+    Headline (`baseline["icac_mean"]`) is:
+      - windowed iCAC for lift-tested channels (D023, post-Fix-A)
+      - aggregate iCAC for untested channels
+    HDI is computed on the matching basis (windowed for tested, full-history
+    for untested) by scripts/10_channel_charts.py.
+    """
     point_v   = baseline["icac_mean"]
     lo, hi    = baseline["icac_hdi_lo"], baseline["icac_hdi_hi"]
-    benchmark = baseline["lift_test_benchmark"]
-    northbeam = baseline["northbeam_icac_ref"]
+    is_tested = baseline.get("is_lift_tested", False)
+    display   = CHANNEL_DISPLAY.get(channel, channel)
+    benchmark = baseline.get("windowed_iCAC_truth") if is_tested else None
+    benchmark_label = "Truth" if is_tested else None
+    # Meta-Web-only Northbeam reference, preserved from prior dashboard.
+    northbeam = baseline.get("northbeam_icac_ref")
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
-        x=[point_v], y=["Meta Web"],
+        x=[point_v], y=[display],
         orientation="h",
         marker_color=BLUE,
         name=f"Median: {_dollar_fmt(point_v)}",
-        hovertemplate=f"Posterior median iCAC: {_dollar_fmt(point_v)}<br>94% HDI: [{_dollar_fmt(lo)}, {_dollar_fmt(hi)}]<extra></extra>",
+        hovertemplate=(
+            f"Posterior median iCAC: {_dollar_fmt(point_v)}<br>"
+            f"94% HDI: [{_dollar_fmt(lo)}, {_dollar_fmt(hi)}]<extra></extra>"
+        ),
     ))
     fig.add_shape(type="line", x0=lo, x1=lo, y0=-0.4, y1=0.4,
                   line=dict(color=GRAY, width=2))
@@ -62,15 +80,25 @@ def fig_icac_baseline(baseline: dict) -> go.Figure:
                   line=dict(color=GRAY, width=2))
     fig.add_shape(type="line", x0=lo, x1=hi, y0=0, y1=0,
                   line=dict(color=GRAY, width=2))
-    fig.add_vline(x=benchmark, line_dash="dash", line_color=ORANGE,
-                  annotation_text=f"Lift test ${benchmark:.0f}", annotation_position="bottom left")
-    fig.add_vline(x=northbeam, line_dash="dot", line_color=GRAY,
-                  annotation_text=f"Northbeam ${northbeam:.0f}", annotation_position="top right")
+    if benchmark is not None and np.isfinite(benchmark):
+        fig.add_vline(x=benchmark, line_dash="dash", line_color=ORANGE,
+                      annotation_text=f"{benchmark_label} ${benchmark:.0f}",
+                      annotation_position="bottom left")
+    if northbeam is not None and np.isfinite(northbeam):
+        fig.add_vline(x=northbeam, line_dash="dot", line_color=GRAY,
+                      annotation_text=f"Northbeam ${northbeam:.0f}",
+                      annotation_position="top right")
 
-    x_max = max(point_v, hi, northbeam, benchmark) * 1.20
+    candidates = [point_v, hi]
+    if benchmark is not None and np.isfinite(benchmark): candidates.append(benchmark)
+    if northbeam is not None and np.isfinite(northbeam): candidates.append(northbeam)
+    x_max = max(candidates) * 1.20
+
+    sub = ("windowed posterior median during lift-test window"
+           if is_tested else "full-history aggregate posterior")
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="Baseline iCAC — Meta Web<br><sub>Model 2 · y=LTV_3YEAR · posterior median + 94% HDI</sub>",
+        title=dict(text=f"Baseline iCAC — {display}<br><sub>Model 2 · y=LTV_3YEAR · {sub} + 94% HDI</sub>",
                    font=dict(size=14)),
         xaxis_title="iCAC (USD per implied conversion)",
         height=280,
@@ -81,19 +109,23 @@ def fig_icac_baseline(baseline: dict) -> go.Figure:
 
 
 # ── Chart 2: Baseline iROAS ─────────────────────────────────────────────────
-def fig_iroas_baseline(baseline: dict) -> go.Figure:
+def fig_iroas_baseline(baseline: dict, channel: str = "meta_web") -> go.Figure:
     mean_v    = baseline["iroas_mean"]
     lo, hi    = baseline["iroas_hdi_lo"], baseline["iroas_hdi_hi"]
-    northbeam = baseline["northbeam_iroas_ref"]
+    northbeam = baseline.get("northbeam_iroas_ref")  # Meta-Web-only
     pct_below = baseline["iroas_below_breakeven_pct"]
+    display   = CHANNEL_DISPLAY.get(channel, channel)
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
-        x=[mean_v], y=["Meta Web"],
+        x=[mean_v], y=[display],
         orientation="h",
         marker_color=ORANGE,
         name=f"Mean: {mean_v:.3f}x",
-        hovertemplate=f"iROAS: {mean_v:.3f}x<br>94% HDI: [{lo:.3f}x, {hi:.3f}x]<br>{pct_below:.0f}% of posterior below break-even<extra></extra>",
+        hovertemplate=(
+            f"iROAS: {mean_v:.3f}x<br>94% HDI: [{lo:.3f}x, {hi:.3f}x]<br>"
+            f"{pct_below:.0f}% of posterior below break-even<extra></extra>"
+        ),
     ))
     fig.add_shape(type="line", x0=lo, x1=lo, y0=-0.4, y1=0.4,
                   line=dict(color=GRAY, width=2))
@@ -103,13 +135,17 @@ def fig_iroas_baseline(baseline: dict) -> go.Figure:
                   line=dict(color=GRAY, width=2))
     fig.add_vline(x=1.0, line_dash="dash", line_color=GRAY,
                   annotation_text="Break-even (1.0x)", annotation_position="top right")
-    fig.add_vline(x=northbeam, line_dash="dot", line_color=BLUE,
-                  annotation_text=f"Northbeam {northbeam:.2f}x", annotation_position="top left")
+    if northbeam is not None and np.isfinite(northbeam):
+        fig.add_vline(x=northbeam, line_dash="dot", line_color=BLUE,
+                      annotation_text=f"Northbeam {northbeam:.2f}x",
+                      annotation_position="top left")
 
-    x_max = max(mean_v, hi, northbeam, 1.0) * 1.15
+    candidates = [mean_v, hi, 1.0]
+    if northbeam is not None and np.isfinite(northbeam): candidates.append(northbeam)
+    x_max = max(candidates) * 1.15
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="Baseline iROAS — Meta Web<br><sub>Model 2 · y=LTV_3YEAR · posterior mean + 94% HDI</sub>",
+        title=dict(text=f"Baseline iROAS — {display}<br><sub>Model 2 · y=LTV_3YEAR · posterior mean + 94% HDI</sub>",
                    font=dict(size=14)),
         xaxis_title="iROAS (LTV dollars per dollar spent)",
         height=280,
@@ -120,9 +156,13 @@ def fig_iroas_baseline(baseline: dict) -> go.Figure:
 
 
 # ── Chart 3: iCAC over time ─────────────────────────────────────────────────
-def fig_icac_time(df: pd.DataFrame, benchmark: float,
+def fig_icac_time(df: pd.DataFrame, benchmark: float | None,
                   spend_df: pd.DataFrame | None = None,
-                  spend_col: str = "meta_web_spend") -> go.Figure:
+                  spend_col: str | None = None,
+                  channel: str = "meta_web") -> go.Figure:
+    spend_col = spend_col or f"{channel}_spend"
+    display = CHANNEL_DISPLAY.get(channel, channel)
+
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["hi95"], mode="lines",
@@ -139,8 +179,10 @@ def fig_icac_time(df: pd.DataFrame, benchmark: float,
         name="Posterior mean iCAC",
         hovertemplate="Week: %{x|%Y-%m-%d}<br>iCAC: $%{y:,.0f}<extra></extra>",
     ), secondary_y=False)
-    fig.add_hline(y=benchmark, line_dash="dash", line_color=ORANGE,
-                  annotation_text=f"Lift test ${benchmark:.0f}", annotation_position="bottom right")
+    if benchmark is not None and np.isfinite(benchmark):
+        fig.add_hline(y=benchmark, line_dash="dash", line_color=ORANGE,
+                      annotation_text=f"Lift-test truth ${benchmark:.0f}",
+                      annotation_position="bottom right")
 
     if spend_df is not None and not spend_df.empty and spend_col in spend_df.columns:
         fig.add_trace(go.Scatter(
@@ -152,7 +194,7 @@ def fig_icac_time(df: pd.DataFrame, benchmark: float,
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="iCAC Over Time — Meta Web<br><sub>Weekly posterior mean + 95% CI · spend overlay</sub>",
+        title=dict(text=f"iCAC Over Time — {display}<br><sub>Weekly posterior mean + 95% CI · spend overlay</sub>",
                    font=dict(size=14)),
         xaxis_title="Week",
         height=380,
@@ -167,7 +209,11 @@ def fig_icac_time(df: pd.DataFrame, benchmark: float,
 # ── Chart 4: iROAS over time ────────────────────────────────────────────────
 def fig_iroas_time(df: pd.DataFrame,
                    spend_df: pd.DataFrame | None = None,
-                   spend_col: str = "meta_web_spend") -> go.Figure:
+                   spend_col: str | None = None,
+                   channel: str = "meta_web") -> go.Figure:
+    spend_col = spend_col or f"{channel}_spend"
+    display = CHANNEL_DISPLAY.get(channel, channel)
+
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["hi95"], mode="lines",
@@ -197,7 +243,7 @@ def fig_iroas_time(df: pd.DataFrame,
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="iROAS Over Time — Meta Web<br><sub>Weekly posterior mean + 95% CI · spend overlay</sub>",
+        title=dict(text=f"iROAS Over Time — {display}<br><sub>Weekly posterior mean + 95% CI · spend overlay</sub>",
                    font=dict(size=14)),
         xaxis_title="Week",
         height=380,
@@ -209,8 +255,9 @@ def fig_iroas_time(df: pd.DataFrame,
 
 
 # ── Chart 5: LTV over time ──────────────────────────────────────────────────
-def fig_ltv_time(df: pd.DataFrame) -> go.Figure:
+def fig_ltv_time(df: pd.DataFrame, channel: str = "meta_web") -> go.Figure:
     """Plot weekly LTV_3YEAR attribution in $K (avoids cramped $0.10M ticks)."""
+    display = CHANNEL_DISPLAY.get(channel, channel)
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["hi95"] / 1_000, mode="lines",
@@ -229,7 +276,7 @@ def fig_ltv_time(df: pd.DataFrame) -> go.Figure:
     ))
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="LTV Contribution Over Time — Meta Web<br><sub>Weekly LTV_3YEAR attributed to Meta Web (posterior mean + 95% CI)</sub>",
+        title=dict(text=f"LTV Contribution Over Time — {display}<br><sub>Weekly LTV_3YEAR attributed to {display} (posterior mean + 95% CI)</sub>",
                    font=dict(size=14)),
         xaxis_title="Week",
         yaxis_title="LTV_3YEAR Contribution ($K / week)",
@@ -254,9 +301,13 @@ def _spend_histogram(spend_df: pd.DataFrame | None, spend_col: str, x_max: float
     return centers, widths, counts
 
 
-def fig_icac_saturation(df: pd.DataFrame, median_spend: float, benchmark: float,
+def fig_icac_saturation(df: pd.DataFrame, median_spend: float,
+                        benchmark: float | None = None,
                         spend_df: pd.DataFrame | None = None,
-                        spend_col: str = "meta_web_spend") -> go.Figure:
+                        spend_col: str | None = None,
+                        channel: str = "meta_web") -> go.Figure:
+    spend_col = spend_col or f"{channel}_spend"
+    display = CHANNEL_DISPLAY.get(channel, channel)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     # Crop to within ~15% above observed-spend max so we don't show deep extrapolation
@@ -317,7 +368,7 @@ def fig_icac_saturation(df: pd.DataFrame, median_spend: float, benchmark: float,
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="iCAC Saturation Curve — Meta Web<br><sub>Spend vs. marginal iCAC · histogram = observed weeks per spend bin · curve right of dashed line is extrapolation</sub>",
+        title=dict(text=f"iCAC Saturation Curve — {display}<br><sub>Spend vs. marginal iCAC · histogram = observed weeks per spend bin · curve right of dashed line is extrapolation</sub>",
                    font=dict(size=14)),
         xaxis_title="Weekly Spend ($)",
         height=420,
@@ -342,7 +393,10 @@ def fig_icac_saturation(df: pd.DataFrame, median_spend: float, benchmark: float,
 # ── Chart 7: iROAS Saturation Curve ────────────────────────────────────────
 def fig_iroas_saturation(df: pd.DataFrame, median_spend: float,
                          spend_df: pd.DataFrame | None = None,
-                         spend_col: str = "meta_web_spend") -> go.Figure:
+                         spend_col: str | None = None,
+                         channel: str = "meta_web") -> go.Figure:
+    spend_col = spend_col or f"{channel}_spend"
+    display = CHANNEL_DISPLAY.get(channel, channel)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     observed_max = float(spend_df[spend_col].max()) if (spend_df is not None and not spend_df.empty) else float(df["spend"].max())
@@ -402,7 +456,7 @@ def fig_iroas_saturation(df: pd.DataFrame, median_spend: float,
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="iROAS Saturation Curve — Meta Web<br><sub>Spend vs. marginal iROAS · histogram = observed weeks per spend bin · curve right of dashed line is extrapolation</sub>",
+        title=dict(text=f"iROAS Saturation Curve — {display}<br><sub>Spend vs. marginal iROAS · histogram = observed weeks per spend bin · curve right of dashed line is extrapolation</sub>",
                    font=dict(size=14)),
         xaxis_title="Weekly Spend ($)",
         height=420,
@@ -424,9 +478,22 @@ def fig_iroas_saturation(df: pd.DataFrame, median_spend: float,
 
 
 # ── Chart 8: Spend Distribution ─────────────────────────────────────────────
-def fig_spend_dist(df: pd.DataFrame, channel_col: str = "meta_web_spend") -> go.Figure:
+def fig_spend_dist(df: pd.DataFrame,
+                   channel_col: str | None = None,
+                   channel: str = "meta_web") -> go.Figure:
+    channel_col = channel_col or f"{channel}_spend"
+    display = CHANNEL_DISPLAY.get(channel, channel)
     spend_vals = df.loc[df[channel_col] > 0, channel_col].values
-    median_v   = float(np.median(spend_vals))
+    if len(spend_vals) == 0:
+        fig = go.Figure()
+        fig.update_layout(
+            **LAYOUT_BASE,
+            title=dict(text=f"Weekly Spend Distribution — {display}<br><sub>No nonzero spend weeks</sub>",
+                       font=dict(size=14)),
+            height=350,
+        )
+        return fig
+    median_v = float(np.median(spend_vals))
 
     fig = go.Figure()
     fig.add_trace(go.Histogram(
@@ -443,7 +510,7 @@ def fig_spend_dist(df: pd.DataFrame, channel_col: str = "meta_web_spend") -> go.
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text="Weekly Spend Distribution — Meta Web",
+        title=dict(text=f"Weekly Spend Distribution — {display}",
                    font=dict(size=14)),
         xaxis_title="Weekly Spend ($)",
         yaxis_title="Number of Weeks",

@@ -27,7 +27,8 @@ import pandas as pd
 from app.data_loader import (
     load_baseline, load_icac_time, load_iroas_time, load_ltv_time,
     load_icac_saturation, load_iroas_saturation, load_spend_weekly,
-    load_convergence, CHANNEL_DISPLAY, CHANNELS_AVAILABLE, CHANNELS_COMING_SOON,
+    load_convergence, CHANNEL_DISPLAY,
+    CHANNELS_LIFT_TESTED, CHANNELS_UNTESTED, CANONICAL_VERSION,
 )
 from app.charts import (
     fig_icac_baseline, fig_iroas_baseline,
@@ -56,28 +57,65 @@ def filter_by_period(df: pd.DataFrame, period: str, date_col: str = "date") -> p
     return df[df[date_col] >= cutoff]
 
 # ── Sidebar ─────────────────────────────────────────────────────────────────
+# Two-radio pattern with mutual reset: selecting in one group clears the other.
+# Source of truth = st.session_state.channel_key. The radios are mirrors that
+# show "selected" only for the active group.
+if "channel_key" not in st.session_state:
+    st.session_state.channel_key = "meta_ios"
+    st.session_state.ch_lift_tested = "meta_ios"
+    st.session_state.ch_untested = None
+
+
+def _on_tested_change():
+    picked = st.session_state.ch_lift_tested
+    if picked:
+        st.session_state.channel_key = picked
+        st.session_state.ch_untested = None  # reset the other group
+
+
+def _on_untested_change():
+    picked = st.session_state.ch_untested
+    if picked:
+        st.session_state.channel_key = picked
+        st.session_state.ch_lift_tested = None  # reset the other group
+
+
 with st.sidebar:
     st.markdown("## Kikoff MMM")
     st.markdown("**Model:** LTV_3YEAR (Model 2)")
+    st.caption(f"Canonical: `{CANONICAL_VERSION}`")
     st.markdown("---")
     st.markdown("**Channel**")
-    channel = st.radio(
-        label="Select channel",
-        options=CHANNELS_AVAILABLE + [f"🔒 {c} (coming soon)" for c in CHANNELS_COMING_SOON],
+    st.caption("Lift-tested (7) — windowed iCAC vs experimental truth")
+    st.radio(
+        "lift_tested",
+        CHANNELS_LIFT_TESTED,
+        format_func=lambda c: CHANNEL_DISPLAY[c],
         label_visibility="collapsed",
+        key="ch_lift_tested",
+        on_change=_on_tested_change,
+        index=None,
     )
-    if "coming soon" in channel:
-        st.info("Additional channels are validated and added as the model improves.")
-        st.stop()
-
-    channel_key = channel  # e.g. "meta_web"
+    st.caption("Untested (12) — aggregate iCAC, wider calibration uncertainty")
+    st.radio(
+        "untested",
+        CHANNELS_UNTESTED,
+        format_func=lambda c: CHANNEL_DISPLAY[c],
+        label_visibility="collapsed",
+        key="ch_untested",
+        on_change=_on_untested_change,
+        index=None,
+    )
+    channel_key = st.session_state.channel_key
 
     st.markdown("---")
     st.markdown("**About**")
     st.caption(
-        "This dashboard shows the current state of the Kikoff Marketing Mix Model. "
-        "Charts update automatically as the model is recalibrated and new outputs are pushed to GitHub. "
-        "Currently showing Meta Web (Facebook). Other channels will be added as they are validated."
+        "This dashboard shows the current state of the Kikoff Marketing Mix Model "
+        "across all 19 channels. Lift-tested channels show **windowed iCAC** anchored "
+        "to the experimental truth window (per D023); untested channels show "
+        "**aggregate iCAC** with wider uncertainty. Charts update automatically as "
+        "the model is recalibrated and outputs are pushed to GitHub."
     )
 
 # ── Load data ────────────────────────────────────────────────────────────────
@@ -91,7 +129,9 @@ spend_df     = load_spend_weekly(channel_key)
 conv         = load_convergence()
 
 median_spend = baseline["median_weekly_spend"]
-benchmark    = baseline["lift_test_benchmark"]
+is_lift_tested = baseline.get("is_lift_tested", False)
+# Windowed truth band for tested channels (post-Fix-A); None for untested.
+benchmark = baseline.get("windowed_iCAC_truth") if is_lift_tested else None
 last_updated = baseline["last_updated"]
 
 # ── Header ───────────────────────────────────────────────────────────────────
@@ -137,7 +177,8 @@ st.markdown("---")
 # ── Summary stats (filtered by active time-period toggle) ────────────────────
 st.markdown(f"#### Channel Totals — {period}")
 ltv_revenue_total = float(ltv_time_view["mean"].sum()) if not ltv_time_view.empty else 0.0
-spend_total       = float(spend_view["meta_web_spend"].sum()) if not spend_view.empty else 0.0
+spend_col_name = f"{channel_key}_spend"
+spend_total       = float(spend_view[spend_col_name].sum()) if not spend_view.empty else 0.0
 total_iroas       = (ltv_revenue_total / spend_total) if spend_total > 0 else 0.0
 
 
@@ -157,38 +198,53 @@ s3.metric("Total iROAS", f"{total_iroas:.3f}x")
 st.markdown("---")
 
 # ── Row 1: Baseline metrics ──────────────────────────────────────────────────
-st.markdown("#### Baseline Performance — full 93-week window")
-st.caption(
-    "Baseline values are the **aggregate** across all 93 weeks (not affected by the time-period toggle above, "
-    "which only filters the per-week visualizations). iCAC headline is the posterior **median** (the posterior is "
-    "right-skewed so the mean is in the tail — see `meta_web_baseline.json:icac_mean_skewed` for the audit value)."
-)
+display_name = CHANNEL_DISPLAY.get(channel_key, channel_key)
+st.markdown(f"#### Baseline Performance — {display_name}")
+if is_lift_tested:
+    gate_label = "PASS" if baseline.get("windowed_gate_pass") else "FAIL"
+    gate_color = "✅" if baseline.get("windowed_gate_pass") else "❌"
+    st.caption(
+        f"Headline iCAC = **windowed posterior median during the lift-test window** (D023). "
+        f"Truth band: **${baseline['windowed_iCAC_truth']:.0f} ± ${baseline['windowed_iCAC_tol']:.0f}**. "
+        f"Windowed gate: {gate_color} **{gate_label}**. "
+        f"For audit, the full-history aggregate iCAC is ${baseline['agg_iCAC_script09']:.0f}."
+    )
+else:
+    st.caption(
+        "Headline iCAC = **full-history aggregate** (no lift test for this channel; "
+        "calibration uncertainty is higher than for lift-tested channels). "
+        "Tested channels can be compared to their experimental truth band; untested channels cannot."
+    )
 col1, col2 = st.columns(2)
 
 with col1:
-    st.plotly_chart(fig_icac_baseline(baseline), use_container_width=True, config=CONFIG)
+    st.plotly_chart(fig_icac_baseline(baseline, channel=channel_key),
+                    use_container_width=True, config=CONFIG)
     with st.expander("Reading this chart"):
-        st.caption(
-            f"**Baseline iCAC ${baseline['icac_mean']:,.0f}** (posterior median; 94% HDI "
-            f"${baseline['icac_hdi_lo']:,.0f}–${baseline['icac_hdi_hi']:,.0f}) — implied dollar cost per conversion "
-            f"attributed to Meta Web by Model 2 (y=LTV_3YEAR), computed as sum(spend) / (sum(LTV_contribution) / avg_LTV). "
-            f"Lift-test reference ${benchmark:.0f} is the May 2025 Meta lift experiment Web cell; "
-            f"Northbeam ${baseline['northbeam_icac_ref']:.0f} is their 52-week Conversions-mode average for FB Web. "
-            f"Both references sit well below our model — the saturation framing (Meeting 5) interprets the gap as "
-            f"the model fitting marginal efficiency at full-scale spend, not as an accuracy gap."
-        )
+        if is_lift_tested:
+            st.caption(
+                f"**Headline iCAC ${baseline['icac_mean']:,.0f}** (windowed posterior median; 94% HDI "
+                f"${baseline['icac_hdi_lo']:,.0f}–${baseline['icac_hdi_hi']:,.0f}). "
+                f"Truth band ${baseline['windowed_iCAC_truth']:.0f} ± ${baseline['windowed_iCAC_tol']:.0f} "
+                f"comes from the lift-test point estimate; gate passes if the headline falls inside. "
+                f"For context, full-history aggregate iCAC is ${baseline['agg_iCAC_script09']:.0f}."
+            )
+        else:
+            st.caption(
+                f"**Headline iCAC ${baseline['icac_mean']:,.0f}** (full-history aggregate posterior median; "
+                f"94% HDI ${baseline['icac_hdi_lo']:,.0f}–${baseline['icac_hdi_hi']:,.0f}). "
+                f"No lift test exists for {display_name} → no experimental truth band. "
+                f"Compare against other channels with similar spend signal for relative ranking."
+            )
 
 with col2:
-    st.plotly_chart(fig_iroas_baseline(baseline), use_container_width=True, config=CONFIG)
+    st.plotly_chart(fig_iroas_baseline(baseline, channel=channel_key),
+                    use_container_width=True, config=CONFIG)
     with st.expander("Reading this chart"):
         st.caption(
             f"**Baseline iROAS {baseline['iroas_mean']:.3f}x** (posterior mean; 94% HDI "
             f"{baseline['iroas_hdi_lo']:.3f}–{baseline['iroas_hdi_hi']:.3f}) — LTV dollars attributed per dollar of spend. "
-            f"{baseline['iroas_below_breakeven_pct']:.0f}% of posterior mass sits below 1.0× break-even. "
-            f"Northbeam reference {baseline['northbeam_iroas_ref']}x is their 26-week LTV-mode view; "
-            f"the 5.6× gap reflects (a) the lift test ran at >$650K/week (above-median, diminishing-returns regime), "
-            f"and (b) 19 modeled channels split credit. Abheek triangulates this with two other models; directional "
-            f"alignment matters more than exact match."
+            f"{baseline['iroas_below_breakeven_pct']:.0f}% of posterior mass sits below 1.0× break-even."
         )
 
 # ── Row 2: Time series ───────────────────────────────────────────────────────
@@ -197,16 +253,22 @@ st.markdown("#### Performance Over Time")
 tab_icac, tab_iroas, tab_ltv = st.tabs(["iCAC over time", "iROAS over time", "LTV over time"])
 
 with tab_icac:
-    st.plotly_chart(fig_icac_time(icac_time_view, benchmark, spend_df=spend_view),
-                    use_container_width=True, config=CONFIG)
+    st.plotly_chart(
+        fig_icac_time(icac_time_view, benchmark, spend_df=spend_view, channel=channel_key),
+        use_container_width=True, config=CONFIG,
+    )
 
 with tab_iroas:
-    st.plotly_chart(fig_iroas_time(iroas_time_view, spend_df=spend_view),
-                    use_container_width=True, config=CONFIG)
+    st.plotly_chart(
+        fig_iroas_time(iroas_time_view, spend_df=spend_view, channel=channel_key),
+        use_container_width=True, config=CONFIG,
+    )
 
 with tab_ltv:
-    st.plotly_chart(fig_ltv_time(ltv_time_view),
-                    use_container_width=True, config=CONFIG)
+    st.plotly_chart(
+        fig_ltv_time(ltv_time_view, channel=channel_key),
+        use_container_width=True, config=CONFIG,
+    )
 
 # ── Row 3: Saturation curves ─────────────────────────────────────────────────
 st.markdown("---")
@@ -219,76 +281,33 @@ st.caption(
 
 sat_col1, sat_col2 = st.columns(2)
 with sat_col1:
-    st.plotly_chart(fig_icac_saturation(icac_sat_df, median_spend, benchmark, spend_df=spend_df),
-                    use_container_width=True, config=CONFIG)
+    st.plotly_chart(
+        fig_icac_saturation(icac_sat_df, median_spend, benchmark=benchmark,
+                            spend_df=spend_df, channel=channel_key),
+        use_container_width=True, config=CONFIG,
+    )
 with sat_col2:
-    st.plotly_chart(fig_iroas_saturation(iroas_sat_df, median_spend, spend_df=spend_df),
-                    use_container_width=True, config=CONFIG)
+    st.plotly_chart(
+        fig_iroas_saturation(iroas_sat_df, median_spend,
+                             spend_df=spend_df, channel=channel_key),
+        use_container_width=True, config=CONFIG,
+    )
 
 # ── Row 4: Spend distribution ────────────────────────────────────────────────
 st.markdown("---")
 st.markdown("#### Weekly Spend Distribution")
-st.plotly_chart(fig_spend_dist(spend_df, channel_col="meta_web_spend"),
-                use_container_width=True, config=CONFIG)
-
-# ── Row 5: Decisioning framework (Meta Web mock) ─────────────────────────────
-st.markdown("---")
-st.markdown("#### Decisioning Framework — Meta Web")
-st.caption(
-    "8-column decisioning layer matching the Meeting 5 specification. "
-    "One row shown for Meta Web as a working template; remaining 18 channel × platform combinations populate post-presentation. "
-    "Header above column G: *Hold on to any changes unless documents and guardrails are in place or proved by Incrementality.*"
+st.plotly_chart(
+    fig_spend_dist(spend_df, channel=channel_key),
+    use_container_width=True, config=CONFIG,
 )
 
-
-def _mean_in_window(df: pd.DataFrame, weeks: int, value_col: str) -> float:
-    if df.empty:
-        return float("nan")
-    cutoff = df["date"].max() - pd.Timedelta(weeks=weeks)
-    sub = df[df["date"] >= cutoff]
-    return float(sub[value_col].mean()) if len(sub) else float("nan")
-
-
-icac_5w  = _mean_in_window(icac_time_df, 5,  "mean")
-icac_26w = _mean_in_window(icac_time_df, 26, "mean")
-iroas_5w  = _mean_in_window(iroas_time_df, 5,  "mean")
-iroas_26w = _mean_in_window(iroas_time_df, 26, "mean")
-icac_delta_pct  = (icac_5w / icac_26w - 1.0) * 100  if icac_26w  else 0.0
-iroas_delta_pct = (iroas_5w / iroas_26w - 1.0) * 100 if iroas_26w else 0.0
-
-# Cross-reference point estimates
-MODEL1_ICAC_META_WEB     = 759           # Model 1 Conversions iCAC (script 08b-v2, model_approach.md)
-MODEL2_ICAC_META_WEB     = baseline["agg_iCAC_script09"]  # 652.11 (script 09 aggregate, Model 2 LTV)
-NORTHBEAM_ICAC_52WK      = baseline["northbeam_icac_ref"]
-LIFT_BENCH_WEB           = benchmark
-
-decisioning_rows = [{
-    "A · Channel": "Meta Web",
-    "B · Spend Signal": "Very High (largest single channel; ~30% share of total weekly spend)",
-    "C · iCAC / Trend": (
-        f"Model 2 (LTV) agg iCAC ${MODEL2_ICAC_META_WEB:.0f} · Model 1 (Conv) ${MODEL1_ICAC_META_WEB} · "
-        f"5WK avg ${icac_5w:,.0f} vs 26WK avg ${icac_26w:,.0f} ({icac_delta_pct:+.0f}%)"
-    ),
-    "D · iROAS Trend": (
-        f"Baseline {baseline['iroas_mean']:.3f}x · "
-        f"5WK avg {iroas_5w:.3f}x vs 26WK avg {iroas_26w:.3f}x "
-        f"({iroas_delta_pct:+.0f}%); 100% of posterior below 1.0× break-even"
-    ),
-    "E · Confidence (Trust)": "🔴 Low — under saturation confound; only meta_ios + ctv passed Model 2 lift-test gate",
-    "F · Saturation Read": (
-        f"Past saturation. Model 2 agg iCAC ${MODEL2_ICAC_META_WEB:.0f} vs Northbeam 52WK ${NORTHBEAM_ICAC_52WK:.0f} "
-        f"({MODEL2_ICAC_META_WEB/NORTHBEAM_ICAC_52WK:.1f}× separation), Model 1 ${MODEL1_ICAC_META_WEB} "
-        f"({MODEL1_ICAC_META_WEB/NORTHBEAM_ICAC_52WK:.1f}×). Lift test ran at ~1/70th typical spend (measured marginal efficiency at test point); "
-        "model fits full-scale spend → diminishing-returns regime."
-    ),
-    "G · Recommended Action": (
-        "Hold on to any changes unless documents and guardrails are in place or proved by incrementality."
-    ),
-    "H · Spend Move to Test": "−15 to −20% (saturation test) — geo holdout at scaled-down spend to verify diminishing-returns finding",
-}]
-
-decisioning_df = pd.DataFrame(decisioning_rows)
-st.dataframe(decisioning_df, use_container_width=True, hide_index=True)
+# ── Pointer to the Decisioning Summary page ─────────────────────────────────
+st.markdown("---")
+st.info(
+    "**Want a cross-channel comparison?** Open the **Decisioning Summary** page "
+    "in the left sidebar — 19-row sortable table with the 8-column M5 decisioning "
+    "framework Abheek approved on 2026-05-12."
+)
 
 # ── Footer ───────────────────────────────────────────────────────────────────
 st.markdown("---")
@@ -296,6 +315,5 @@ st.caption(
     f"**Data window:** {conv['weekly_obs']} weeks | "
     f"**Channels in model:** {conv['n_channels']} | "
     f"**avg LTV per customer:** ${baseline['avg_ltv']:,.2f} | "
-    f"Northbeam references: iROAS {baseline['northbeam_iroas_ref']}x (26WK LTV mode), "
-    f"iCAC ${baseline['northbeam_icac_ref']:.0f} (52WK Conversions mode)"
+    f"**Canonical:** `{CANONICAL_VERSION}`"
 )

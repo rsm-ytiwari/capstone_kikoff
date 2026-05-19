@@ -49,30 +49,45 @@ print(f"OUT_P2_04:  {OUT_P2_04}\n")
 # Lift test reference table (same windows and channels as 08b).
 # delta_y and sigma are in CONVERSIONS here; scaled to LTV dollars below
 # via `* avg_ltv` (existing scaling logic at lines ~160).
+#
+# M3.5b 2026-05-19: lift δ_y and σ scaled to W-MON window basis (Fix-A) —
+# see proposals/2026-05-19_d027_window_basis_correction.md. I-7 reconciliation
+# (drafts/i7_window_reconciliation_2026-05-18.md) found the windowed-iCAC
+# gate compared N-day model spend to k-day lift-test δ_y, mechanically
+# inflating iCAC by ~N/k. Fix-A scales each row's δ_y and σ by
+# (W-MON window days / test days inclusive). LTV-unit scaling via `* avg_ltv`
+# preserves the same factor through to the LTV-model prior automatically.
+#
+# Per-test scaling factors (mirror 08b):
+#   Meta May 2025:   8d  → 14d  × 1.75
+#   TikTok Aug 2025: 24d → 28d  × 1.1667
+#   CTV Oct 2025:    27d → 28d  × 1.037
+#   Meta Jan 2026:   5d  → 14d  × 2.8
+#
 # σ:
-#   Meta May 2025 + TikTok Aug 2025: σ = 10% of δ_y (Path B per D022).
-#     σ-ladder diagnostic 2026-05-18 (Model 1 only): 10% → 5% degraded R-hat
-#     and ESS without moving Meta Web iCAC meaningfully — σ is not the lever.
-#     Reverted to 10% as canonical; Phase 3 may explore structural fixes.
-#   CTV: σ = 373 CI-derived (D020 unchanged).
-#   Meta Jan 2026: σ = 3 × max(δ_y, 30) (D019-rev — wide-σ).
+#   Meta May 2025 + TikTok Aug 2025: σ = 10% of (scaled δ_y) (Path B per D022).
+#   CTV: σ scales with δ_y (CI-derived 373 → 386.8); D020 unchanged in spirit.
+#   Meta Jan 2026: σ = 3 × max(scaled δ_y, 30) (D019-rev — wide-σ).
+# Originals (pre-Fix-A) preserved in ltv_convergence.json + ltv_trace.nc
+# (canonical M3.5 reference snapshots — do not overwrite).
 # ---------------------------------------------------------------------------
 LIFT_TESTS_CONV = [
     # (label, channel_col, test_start, test_end, delta_y_conv, sigma_conv)
-    # Meta May 2025 — Kikoff_LiftStudy_0525 (99.9% confidence; Path B σ = 10% δ_y).
-    ("meta_ios_may25",     "meta_ios",      "2025-05-06", "2025-05-13",  1_156.0,  115.6),
-    ("meta_android_may25", "meta_android",  "2025-05-06", "2025-05-13",  1_405.0,  140.5),
-    ("meta_web_may25",     "meta_web",      "2025-05-06", "2025-05-13",  1_128.0,  112.8),
-    # TikTok Aug-Sep 2025 (holdout 3-cell; Path B σ = 10% δ_y).
-    ("tiktok_ios_aug25",     "tiktok_ios",     "2025-08-22", "2025-09-14",    569.0,   56.9),
-    ("tiktok_android_aug25", "tiktok_android", "2025-08-22", "2025-09-14",    651.0,   65.1),
-    ("tiktok_web_aug25",     "tiktok_web",     "2025-08-22", "2025-09-14",  6_215.0,  621.5),
-    # CTV Oct-Nov 2025 — σ unchanged (D020 CI-derived).
-    ("ctv_oct25",          "ctv",           "2025-10-06", "2025-11-01",  1_840.0,  373.0),
-    # Meta Jan 2026 — Kick Off January CLS-BLS (cancelled; D019-rev). Wide σ.
-    ("meta_ios_jan26",     "meta_ios",      "2026-01-03", "2026-01-07",     10.0,    90.0),
-    ("meta_android_jan26", "meta_android",  "2026-01-03", "2026-01-07",    365.0, 1_095.0),
-    ("meta_web_jan26",     "meta_web",      "2026-01-03", "2026-01-07",  1_122.0, 3_366.0),
+    # Meta May 2025 — 8d test, W-MON window 14d → scale 1.75.
+    ("meta_ios_may25",     "meta_ios",      "2025-05-06", "2025-05-13",  2_023.0,   202.3),
+    ("meta_android_may25", "meta_android",  "2025-05-06", "2025-05-13",  2_459.0,   245.9),
+    ("meta_web_may25",     "meta_web",      "2025-05-06", "2025-05-13",  1_974.0,   197.4),
+    # TikTok Aug-Sep 2025 — 24d test, W-MON window 28d → scale 1.1667.
+    ("tiktok_ios_aug25",     "tiktok_ios",     "2025-08-22", "2025-09-14",     663.8,    66.4),
+    ("tiktok_android_aug25", "tiktok_android", "2025-08-22", "2025-09-14",     759.5,    75.95),
+    ("tiktok_web_aug25",     "tiktok_web",     "2025-08-22", "2025-09-14",   7_250.8,  725.08),
+    # CTV Oct-Nov 2025 — 27d test, W-MON window 28d → scale 1.037 (σ scales too).
+    ("ctv_oct25",          "ctv",           "2025-10-06", "2025-11-01",   1_908.0,   386.8),
+    # Meta Jan 2026 — 5d test, W-MON window 14d → scale 2.8.
+    # Wide σ rule preserved: σ = 3 × max(scaled δ_y, 30).
+    ("meta_ios_jan26",     "meta_ios",      "2026-01-03", "2026-01-07",      28.0,     90.0),
+    ("meta_android_jan26", "meta_android",  "2026-01-03", "2026-01-07",   1_022.0,  3_066.0),
+    ("meta_web_jan26",     "meta_web",      "2026-01-03", "2026-01-07",   3_142.0,  9_426.0),
 ]
 
 # ---------------------------------------------------------------------------
@@ -258,7 +273,7 @@ print("Sampling complete.\n")
 # ---------------------------------------------------------------------------
 # Save trace for script 10 (best-effort — skip if too large)
 # ---------------------------------------------------------------------------
-trace_path = OUT_P2_04 / "traces" / "ltv_trace.nc"
+trace_path = OUT_P2_04 / "traces" / "ltv_trace_window_scaled.nc"
 try:
     idata.to_netcdf(str(trace_path))
     print(f"Trace saved: {trace_path}")
@@ -448,14 +463,18 @@ result = {
     ],
     "notes": (
         "Model 2 — y=LTV_3YEAR (weekly sum, dollars). Mechanism 2 windowed priors. "
-        "M3.5 calibration: D019-rev (Meta Jan 2026 re-included wide σ), "
-        "D021 (baseline <20%), D022 (Path B σ = 10% δ_y for Meta + TikTok), "
-        "D023 (windowed-iCAC gate), D024 (no ordering gate). "
+        "M3.5 calibration: D019-rev, D021, D022, D023, D024. M3.5b 2026-05-19 "
+        "Fix-A (D027 pending APPROVED): lift δ_y and σ scaled by (W-MON window "
+        "days / test days inclusive) to align prior basis with model's weekly "
+        "cadence; LTV-unit scaling propagates the factor via `* avg_ltv`. See "
+        "drafts/i7_window_reconciliation_2026-05-18.md and "
+        "proposals/2026-05-19_d027_window_basis_correction.md. Canonical M3.5 "
+        "(pre-Fix-A) snapshot preserved at ltv_convergence.json + ltv_trace.nc. "
         "iCAC = spend / (ltv_contribution / avg_ltv). iROAS = ltv_contribution / spend."
     ),
 }
 
-out_path = OUT_P2_04 / "metrics" / "ltv_convergence.json"
+out_path = OUT_P2_04 / "metrics" / "ltv_window_scaled.json"
 with open(out_path, "w") as f:
     json.dump(result, f, indent=2)
 
