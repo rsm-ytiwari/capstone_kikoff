@@ -32,9 +32,9 @@
       "start": "2025-05-06",
       "end": "2025-05-13",
       "delta_y_conv": 1156.0,
-      "sigma_conv": 347.0,
+      "sigma_conv": 115.6,
       "delta_y_ltv": 240586.58,
-      "sigma_ltv": 72217.6,
+      "sigma_ltv": 24058.66,
       "n_weeks": 2
     },
     {
@@ -43,9 +43,9 @@
       "start": "2025-05-06",
       "end": "2025-05-13",
       "delta_y_conv": 1405.0,
-      "sigma_conv": 422.0,
+      "sigma_conv": 140.5,
       "delta_y_ltv": 292408.43,
-      "sigma_ltv": 87826.59,
+      "sigma_ltv": 29240.84,
       "n_weeks": 2
     },
     {
@@ -54,9 +54,9 @@
       "start": "2025-05-06",
       "end": "2025-05-13",
       "delta_y_conv": 1128.0,
-      "sigma_conv": 338.0,
+      "sigma_conv": 112.8,
       "delta_y_ltv": 234759.22,
-      "sigma_ltv": 70344.52,
+      "sigma_ltv": 23475.92,
       "n_weeks": 2
     },
     {
@@ -65,9 +65,9 @@
       "start": "2025-08-22",
       "end": "2025-09-14",
       "delta_y_conv": 569.0,
-      "sigma_conv": 171.0,
+      "sigma_conv": 56.9,
       "delta_y_ltv": 118420.21,
-      "sigma_ltv": 35588.5,
+      "sigma_ltv": 11842.02,
       "n_weeks": 4
     },
     {
@@ -76,9 +76,9 @@
       "start": "2025-08-22",
       "end": "2025-09-14",
       "delta_y_conv": 651.0,
-      "sigma_conv": 195.0,
+      "sigma_conv": 65.1,
       "delta_y_ltv": 135486.04,
-      "sigma_ltv": 40583.38,
+      "sigma_ltv": 13548.6,
       "n_weeks": 4
     },
     {
@@ -87,9 +87,9 @@
       "start": "2025-08-22",
       "end": "2025-09-14",
       "delta_y_conv": 6215.0,
-      "sigma_conv": 1865.0,
+      "sigma_conv": 621.5,
       "delta_y_ltv": 1293465.04,
-      "sigma_ltv": 388143.57,
+      "sigma_ltv": 129346.5,
       "n_weeks": 4
     },
     {
@@ -102,79 +102,155 @@
       "delta_y_ltv": 382940.57,
       "sigma_ltv": 77628.71,
       "n_weeks": 4
+    },
+    {
+      "label": "meta_ios_jan26",
+      "channel": "meta_ios",
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y_conv": 10.0,
+      "sigma_conv": 90.0,
+      "delta_y_ltv": 2081.2,
+      "sigma_ltv": 18730.79,
+      "n_weeks": 2
+    },
+    {
+      "label": "meta_android_jan26",
+      "channel": "meta_android",
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y_conv": 365.0,
+      "sigma_conv": 1095.0,
+      "delta_y_ltv": 75963.76,
+      "sigma_ltv": 227891.27,
+      "n_weeks": 2
+    },
+    {
+      "label": "meta_web_jan26",
+      "channel": "meta_web",
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y_conv": 1122.0,
+      "sigma_conv": 3366.0,
+      "delta_y_ltv": 233510.5,
+      "sigma_ltv": 700531.51,
+      "n_weeks": 2
     }
   ],
   "convergence": {
-    "rhat_max": 1.011,
-    "ess_min": 267.6,
-    "divergences": 35,
+    "rhat_max": 1.004,
+    "ess_min": 2224.3,
+    "divergences": 0,
     "rhat_gate_pass": true,
-    "ess_gate_pass": false
+    "ess_gate_pass": true
   },
-  "baseline_pct": 0.5348,
-  "icac": {
-    "apple_search": 215.27,
-    "applovin_android": 269.63,
-    "applovin_ios": 220.37,
-    "ctv": 139.16,
-    "dsp": 126.84,
-    "google_android": 478.61,
-    "google_ios": 126.24,
-    "google_web": 197.49,
-    "influencer": 38.56,
-    "liftoff": 58.98,
-    "linear_tv": 17.85,
-    "meta_android": 176.33,
-    "meta_ios": 172.93,
-    "meta_web": 652.11,
-    "others": 1.35,
-    "podcast": 42.83,
-    "tiktok_android": 156.29,
-    "tiktok_ios": 416.57,
-    "tiktok_web": 301.4
+  "baseline_pct": 0.7042,
+  "windowed_icac": {
+    "meta_ios": 229.89,
+    "meta_android": 145.65,
+    "meta_web": 466.45,
+    "tiktok_ios": 333.08,
+    "tiktok_android": 129.43,
+    "tiktok_web": 151.52,
+    "ctv": 142.44
+  },
+  "icac_aggregate_diagnostic": {
+    "apple_search": 232.57,
+    "applovin_android": 292.59,
+    "applovin_ios": 233.88,
+    "ctv": 142.63,
+    "dsp": 152.06,
+    "google_android": 514.41,
+    "google_ios": 133.82,
+    "google_web": 212.32,
+    "influencer": 44.23,
+    "liftoff": 59.86,
+    "linear_tv": 300.96,
+    "meta_android": 160.83,
+    "meta_ios": 220.49,
+    "meta_web": 492.62,
+    "others": 1.49,
+    "podcast": 45.21,
+    "tiktok_android": 140.31,
+    "tiktok_ios": 347.83,
+    "tiktok_web": 154.02
   },
   "iroas": {
-    "apple_search": 0.9668,
-    "applovin_android": 0.7719,
-    "applovin_ios": 0.9444,
-    "ctv": 1.4956,
-    "dsp": 1.6408,
-    "google_android": 0.4348,
-    "google_ios": 1.6486,
-    "google_web": 1.0538,
-    "influencer": 5.3978,
-    "liftoff": 3.5289,
-    "linear_tv": 11.6578,
-    "meta_android": 1.1803,
-    "meta_ios": 1.2035,
-    "meta_web": 0.3191,
-    "others": 154.0735,
-    "podcast": 4.8587,
-    "tiktok_android": 1.3317,
-    "tiktok_ios": 0.4996,
-    "tiktok_web": 0.6905
+    "apple_search": 0.8949,
+    "applovin_android": 0.7113,
+    "applovin_ios": 0.8899,
+    "ctv": 1.4592,
+    "dsp": 1.3687,
+    "google_android": 0.4046,
+    "google_ios": 1.5552,
+    "google_web": 0.9802,
+    "influencer": 4.7054,
+    "liftoff": 3.477,
+    "linear_tv": 0.6915,
+    "meta_android": 1.294,
+    "meta_ios": 0.9439,
+    "meta_web": 0.4225,
+    "others": 139.4092,
+    "podcast": 4.6038,
+    "tiktok_android": 1.4833,
+    "tiktok_ios": 0.5983,
+    "tiktok_web": 1.3513
   },
   "benchmarks": {
-    "meta_ios": 135.48,
-    "meta_android": 63.06,
-    "meta_web": 156.89,
-    "tiktok_ios": 108.83,
-    "tiktok_android": 81.68,
-    "tiktok_web": 112.12,
-    "ctv": 135.05
+    "meta_ios": {
+      "point_estimate": 135.48,
+      "window_start": "2025-05-06",
+      "window_end": "2025-05-13",
+      "tolerance": 50.0
+    },
+    "meta_android": {
+      "point_estimate": 63.06,
+      "window_start": "2025-05-06",
+      "window_end": "2025-05-13",
+      "tolerance": 50.0
+    },
+    "meta_web": {
+      "point_estimate": 156.89,
+      "window_start": "2025-05-06",
+      "window_end": "2025-05-13",
+      "tolerance": 50.0
+    },
+    "tiktok_ios": {
+      "point_estimate": 108.83,
+      "window_start": "2025-08-22",
+      "window_end": "2025-09-14",
+      "tolerance": 50.0
+    },
+    "tiktok_android": {
+      "point_estimate": 81.68,
+      "window_start": "2025-08-22",
+      "window_end": "2025-09-14",
+      "tolerance": 50.0
+    },
+    "tiktok_web": {
+      "point_estimate": 112.12,
+      "window_start": "2025-08-22",
+      "window_end": "2025-09-14",
+      "tolerance": 50.0
+    },
+    "ctv": {
+      "point_estimate": 135.05,
+      "window_start": "2025-10-06",
+      "window_end": "2025-11-01",
+      "tolerance": 15.0
+    }
   },
   "gates": {
-    "gate_icac_meta_ios": true,
-    "gate_icac_meta_android": false,
-    "gate_icac_meta_web": false,
-    "gate_icac_tiktok_ios": false,
-    "gate_icac_tiktok_android": false,
-    "gate_icac_tiktok_web": false,
-    "gate_icac_ctv": true,
-    "gate_ordering_meta_ios_gt_android": false,
+    "gate_icac_windowed_meta_ios": false,
+    "gate_icac_windowed_meta_android": false,
+    "gate_icac_windowed_meta_web": false,
+    "gate_icac_windowed_tiktok_ios": false,
+    "gate_icac_windowed_tiktok_android": true,
+    "gate_icac_windowed_tiktok_web": true,
+    "gate_icac_windowed_ctv": true,
     "gate_rhat_pass": true,
-    "gate_ess_pass": false,
-    "gate_baseline_pass": true
+    "gate_ess_pass": true,
+    "gate_baseline_pass": false
   },
   "all_gates_pass": false,
   "contribution_api_used": "compute_mean_contributions_over_time",
@@ -182,5 +258,5 @@
     "Q22: iOS/Android 50/50 spend split unconfirmed by Abheek \u2014 iOS vs. Android LTV attribution may shift if actual allocation differs.",
     "Q23: iOS pacing confound (r=0.48 with total conversions) carries into LTV model since LTV=f(conversions). Mechanism 2 windowed priors mitigate for tested channels but structural risk is not eliminated."
   ],
-  "notes": "Model 2 \u2014 y=LTV_3YEAR (weekly sum, dollars). Mechanism 2 windowed priors. Lift test delta_y scaled to LTV units: delta_y_ltv = delta_y_conv * avg_ltv. iCAC = spend / (ltv_contribution / avg_ltv). iROAS = ltv_contribution / spend. Same 7 lift tests and 19 channels as 08b."
+  "notes": "Model 2 \u2014 y=LTV_3YEAR (weekly sum, dollars). Mechanism 2 windowed priors. M3.5 calibration: D019-rev (Meta Jan 2026 re-included wide \u03c3), D021 (baseline <20%), D022 (Path B \u03c3 = 10% \u03b4_y for Meta + TikTok), D023 (windowed-iCAC gate), D024 (no ordering gate). iCAC = spend / (ltv_contribution / avg_ltv). iROAS = ltv_contribution / spend."
 }

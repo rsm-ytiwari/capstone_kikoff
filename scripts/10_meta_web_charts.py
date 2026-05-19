@@ -132,9 +132,14 @@ mw_contrib_draws = contrib_all[:, :, meta_web_idx]     # LTV $ per week per draw
 # Verify scale against script 09 JSON
 with open(CONV_JSON) as f:
     conv09 = json.load(f)
-expected_total = conv09["icac"]["meta_web"]  # we can compute expected
+# M3.5: script 09 now exposes `icac_aggregate_diagnostic` (renamed from `icac`)
+# alongside `windowed_icac`. Use aggregate for the scale-check (full-history
+# Meta Web iCAC); windowed iCAC for gate evaluation lives in the JSON
+# under `windowed_icac.meta_web`.
+expected_total = conv09["icac_aggregate_diagnostic"]["meta_web"]
 expected_mw_contrib = mw_spend_total / (expected_total * avg_ltv / avg_ltv)
-print(f"Scale check — script 09 meta_web iCAC: ${conv09['icac']['meta_web']:,.2f}")
+print(f"Scale check — script 09 meta_web aggregate iCAC: ${expected_total:,.2f}  "
+      f"(windowed iCAC: ${conv09['windowed_icac']['meta_web']:,.2f})")
 print(f"Mean per-draw total contrib: ${mw_contrib_draws.sum(axis=1).mean():,.0f}")
 
 # ---------------------------------------------------------------------------
@@ -560,31 +565,42 @@ sp_nz              = mw_spend[spend_nonzero]
 icac_time_mean = sp_nz / (mw_contrib_nz_mean / avg_ltv)
 icac_time_lo   = sp_nz / (mw_contrib_nz_hi   / avg_ltv)   # high contrib → low iCAC bound
 icac_time_hi   = sp_nz / (mw_contrib_nz_lo   / avg_ltv)   # low contrib  → high iCAC bound
-pd.DataFrame({
+# Enforce D003 modeling cutoff (2026-03-31). Q29 fix — without this, the
+# dashboard iCAC-over-time chart shows partial April weeks that misrepresent
+# the trend. Source-side fix; app/data_loader.py also enforces this as defense in depth.
+CUTOFF = "2026-03-31"
+
+_df = pd.DataFrame({
     "date":  pd.DatetimeIndex(week_dates_nz).strftime("%Y-%m-%d"),
     "mean":  icac_time_mean,
     "lo95":  icac_time_lo,
     "hi95":  icac_time_hi,
-}).to_csv(CHART_DIR / "meta_web_icac_time.csv", index=False)
+})
+_df = _df[_df["date"] <= CUTOFF]
+_df.to_csv(CHART_DIR / "meta_web_icac_time.csv", index=False)
 
 # 2. Weekly iROAS time series — ratio of posterior means (Jensen-consistent with aggregate)
 iroas_time_mean = mw_contrib_nz_mean / sp_nz
 iroas_time_lo   = mw_contrib_nz_lo   / sp_nz
 iroas_time_hi   = mw_contrib_nz_hi   / sp_nz
-pd.DataFrame({
+_df = pd.DataFrame({
     "date":  pd.DatetimeIndex(week_dates_nz).strftime("%Y-%m-%d"),
     "mean":  iroas_time_mean,
     "lo95":  iroas_time_lo,
     "hi95":  iroas_time_hi,
-}).to_csv(CHART_DIR / "meta_web_iroas_time.csv", index=False)
+})
+_df = _df[_df["date"] <= CUTOFF]
+_df.to_csv(CHART_DIR / "meta_web_iroas_time.csv", index=False)
 
 # 3. Weekly LTV contribution
-pd.DataFrame({
+_df = pd.DataFrame({
     "date":  pd.DatetimeIndex(week_dates).strftime("%Y-%m-%d"),
     "mean":  ltv_contrib_mean,
     "lo95":  ltv_contrib_lo,
     "hi95":  ltv_contrib_hi,
-}).to_csv(CHART_DIR / "meta_web_ltv_time.csv", index=False)
+})
+_df = _df[_df["date"] <= CUTOFF]
+_df.to_csv(CHART_DIR / "meta_web_ltv_time.csv", index=False)
 
 # 4. iCAC saturation curve
 if SAT_CURVE_OK:
@@ -606,10 +622,12 @@ if SAT_CURVE_OK:
     }).to_csv(CHART_DIR / "meta_web_iroas_saturation.csv", index=False)
 
 # 6. Weekly spend distribution
-pd.DataFrame({
+_df = pd.DataFrame({
     "date":        pd.DatetimeIndex(week_dates).strftime("%Y-%m-%d"),
     "meta_web_spend": mw_spend,
-}).to_csv(CHART_DIR / "meta_web_spend_weekly.csv", index=False)
+})
+_df = _df[_df["date"] <= CUTOFF]
+_df.to_csv(CHART_DIR / "meta_web_spend_weekly.csv", index=False)
 
 # 7. Baseline metrics JSON (iCAC + iROAS + HDI + model metadata from conv09)
 import json as _json
@@ -638,7 +656,8 @@ baseline_export = {
     "northbeam_iroas_ref": 1.79,
     "northbeam_icac_ref":  274.0,
     "lift_test_benchmark": 156.89,
-    "agg_iCAC_script09":   float(conv09["icac"]["meta_web"]),
+    "agg_iCAC_script09":   float(conv09["icac_aggregate_diagnostic"]["meta_web"]),
+    "windowed_iCAC_script09": float(conv09["windowed_icac"]["meta_web"]),
 }
 with open(CHART_DIR / "meta_web_baseline.json", "w") as f:
     _json.dump(baseline_export, f, indent=2)

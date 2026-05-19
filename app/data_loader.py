@@ -15,6 +15,8 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 _CHART_DIR  = _REPO_ROOT / "outputs" / "P2_04_full_channel" / "charts"
 _METRIC_DIR = _REPO_ROOT / "outputs" / "P2_04_full_channel" / "metrics"
 
+CUTOFF_DATE = "2026-03-31"  # D003 modeling cutoff (Q29 defense in depth)
+
 CHANNEL_DISPLAY = {
     "meta_web": "Meta Web (Facebook)",
 }
@@ -58,6 +60,7 @@ def load_baseline(channel: str = "meta_web") -> dict:
 @st.cache_data(ttl=300)
 def load_spend_weekly(channel: str = "meta_web", drop_partial_last: bool = True) -> pd.DataFrame:
     df = pd.read_csv(_CHART_DIR / f"{channel}_spend_weekly.csv", parse_dates=["date"])
+    df = df[df["date"] <= CUTOFF_DATE].copy()
     if drop_partial_last:
         df = _drop_partial_last_week(df, f"{channel}_spend", df)
     return df
@@ -66,8 +69,10 @@ def load_spend_weekly(channel: str = "meta_web", drop_partial_last: bool = True)
 @st.cache_data(ttl=300)
 def load_icac_time(channel: str = "meta_web", drop_partial_last: bool = True) -> pd.DataFrame:
     df = pd.read_csv(_CHART_DIR / f"{channel}_icac_time.csv", parse_dates=["date"])
+    df = df[df["date"] <= CUTOFF_DATE].copy()
     if drop_partial_last:
         spend_df = pd.read_csv(_CHART_DIR / f"{channel}_spend_weekly.csv", parse_dates=["date"])
+        spend_df = spend_df[spend_df["date"] <= CUTOFF_DATE].copy()
         df = _drop_partial_last_week(df, f"{channel}_spend", spend_df)
     return df
 
@@ -75,8 +80,10 @@ def load_icac_time(channel: str = "meta_web", drop_partial_last: bool = True) ->
 @st.cache_data(ttl=300)
 def load_iroas_time(channel: str = "meta_web", drop_partial_last: bool = True) -> pd.DataFrame:
     df = pd.read_csv(_CHART_DIR / f"{channel}_iroas_time.csv", parse_dates=["date"])
+    df = df[df["date"] <= CUTOFF_DATE].copy()
     if drop_partial_last:
         spend_df = pd.read_csv(_CHART_DIR / f"{channel}_spend_weekly.csv", parse_dates=["date"])
+        spend_df = spend_df[spend_df["date"] <= CUTOFF_DATE].copy()
         df = _drop_partial_last_week(df, f"{channel}_spend", spend_df)
     return df
 
@@ -84,8 +91,10 @@ def load_iroas_time(channel: str = "meta_web", drop_partial_last: bool = True) -
 @st.cache_data(ttl=300)
 def load_ltv_time(channel: str = "meta_web", drop_partial_last: bool = True) -> pd.DataFrame:
     df = pd.read_csv(_CHART_DIR / f"{channel}_ltv_time.csv", parse_dates=["date"])
+    df = df[df["date"] <= CUTOFF_DATE].copy()
     if drop_partial_last:
         spend_df = pd.read_csv(_CHART_DIR / f"{channel}_spend_weekly.csv", parse_dates=["date"])
+        spend_df = spend_df[spend_df["date"] <= CUTOFF_DATE].copy()
         df = _drop_partial_last_week(df, f"{channel}_spend", spend_df)
     return df
 

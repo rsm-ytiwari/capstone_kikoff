@@ -30,7 +30,7 @@
       "start": "2025-05-06",
       "end": "2025-05-13",
       "delta_y": 1156.0,
-      "sigma": 115.6,
+      "sigma": 57.8,
       "n_weeks": 2
     },
     {
@@ -39,7 +39,7 @@
       "start": "2025-05-06",
       "end": "2025-05-13",
       "delta_y": 1405.0,
-      "sigma": 140.5,
+      "sigma": 70.25,
       "n_weeks": 2
     },
     {
@@ -48,7 +48,7 @@
       "start": "2025-05-06",
       "end": "2025-05-13",
       "delta_y": 1128.0,
-      "sigma": 112.8,
+      "sigma": 56.4,
       "n_weeks": 2
     },
     {
@@ -57,7 +57,7 @@
       "start": "2025-08-22",
       "end": "2025-09-14",
       "delta_y": 569.0,
-      "sigma": 56.9,
+      "sigma": 28.45,
       "n_weeks": 4
     },
     {
@@ -66,7 +66,7 @@
       "start": "2025-08-22",
       "end": "2025-09-14",
       "delta_y": 651.0,
-      "sigma": 65.1,
+      "sigma": 32.55,
       "n_weeks": 4
     },
     {
@@ -75,7 +75,7 @@
       "start": "2025-08-22",
       "end": "2025-09-14",
       "delta_y": 6215.0,
-      "sigma": 621.5,
+      "sigma": 310.75,
       "n_weeks": 4
     },
     {
@@ -116,41 +116,41 @@
     }
   ],
   "convergence": {
-    "rhat_max": 1.003,
-    "ess_min": 2218.2,
-    "rhat_gate_pass": true,
-    "ess_gate_pass": true
+    "rhat_max": 1.107,
+    "ess_min": 26.9,
+    "rhat_gate_pass": false,
+    "ess_gate_pass": false
   },
-  "baseline_pct": 0.731,
+  "baseline_pct": 0.6136,
   "windowed_icac": {
-    "meta_ios": 229.53,
-    "meta_android": 147.18,
-    "meta_web": 470.18,
-    "tiktok_ios": 334.6,
-    "tiktok_android": 129.8,
-    "tiktok_web": 154.82,
-    "ctv": 143.81
+    "meta_ios": 226.4,
+    "meta_android": 144.22,
+    "meta_web": 454.87,
+    "tiktok_ios": 329.66,
+    "tiktok_android": 128.79,
+    "tiktok_web": 142.62,
+    "ctv": 140.73
   },
   "icac_aggregate_diagnostic": {
-    "apple_search": 295.44,
-    "applovin_android": 332.5,
-    "applovin_ios": 282.47,
-    "ctv": 144.0,
-    "dsp": 172.49,
-    "google_android": 648.09,
-    "google_ios": 146.04,
-    "google_web": 293.68,
-    "influencer": 58.32,
-    "liftoff": 57.55,
-    "linear_tv": 359.07,
-    "meta_android": 163.51,
-    "meta_ios": 220.26,
-    "meta_web": 496.6,
-    "others": 1.57,
-    "podcast": 60.16,
-    "tiktok_android": 141.1,
-    "tiktok_ios": 350.12,
-    "tiktok_web": 157.38
+    "apple_search": 304.58,
+    "applovin_android": 314.93,
+    "applovin_ios": 277.59,
+    "ctv": 140.11,
+    "dsp": 143.94,
+    "google_android": 693.58,
+    "google_ios": 151.82,
+    "google_web": 334.91,
+    "influencer": 55.09,
+    "liftoff": 61.13,
+    "linear_tv": 29.92,
+    "meta_android": 155.22,
+    "meta_ios": 205.16,
+    "meta_web": 525.49,
+    "others": 1.4,
+    "podcast": 57.44,
+    "tiktok_android": 150.77,
+    "tiktok_ios": 376.62,
+    "tiktok_web": 144.91
   },
   "benchmarks": {
     "meta_ios": {
@@ -204,8 +204,8 @@
     "gate_icac_windowed_tiktok_android": true,
     "gate_icac_windowed_tiktok_web": true,
     "gate_icac_windowed_ctv": true,
-    "gate_rhat_pass": true,
-    "gate_ess_pass": true,
+    "gate_rhat_pass": false,
+    "gate_ess_pass": false,
     "gate_baseline_pass": false
   },
   "all_gates_pass": false,

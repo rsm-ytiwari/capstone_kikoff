@@ -1,5 +1,6 @@
 {
-  "script": "08b_mechanism2_more_tune",
+  "script": "08f_tight_lam_prior",
+  "variant": "M3.5 Lever C \u2014 LogisticSaturation lam ~ Gamma(2,2) (else identical to 08b)",
   "weekly_obs": 93,
   "n_channels": 19,
   "channel_columns": [

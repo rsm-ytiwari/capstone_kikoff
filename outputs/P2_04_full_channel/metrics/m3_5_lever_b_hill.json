@@ -1,5 +1,6 @@
 {
-  "script": "08b_mechanism2_more_tune",
+  "script": "08e_hill_saturation",
+  "variant": "M3.5 Lever B \u2014 HillSaturation drop-in (else identical to 08b)",
   "weekly_obs": 93,
   "n_channels": 19,
   "channel_columns": [
@@ -116,41 +117,41 @@
     }
   ],
   "convergence": {
-    "rhat_max": 1.003,
-    "ess_min": 2218.2,
+    "rhat_max": 1.006,
+    "ess_min": 1104.6,
     "rhat_gate_pass": true,
     "ess_gate_pass": true
   },
-  "baseline_pct": 0.731,
+  "baseline_pct": 0.7525,
   "windowed_icac": {
-    "meta_ios": 229.53,
-    "meta_android": 147.18,
-    "meta_web": 470.18,
-    "tiktok_ios": 334.6,
-    "tiktok_android": 129.8,
-    "tiktok_web": 154.82,
-    "ctv": 143.81
+    "meta_ios": 226.95,
+    "meta_android": 146.52,
+    "meta_web": 472.41,
+    "tiktok_ios": 337.07,
+    "tiktok_android": 129.61,
+    "tiktok_web": 155.18,
+    "ctv": 147.11
   },
   "icac_aggregate_diagnostic": {
-    "apple_search": 295.44,
-    "applovin_android": 332.5,
-    "applovin_ios": 282.47,
-    "ctv": 144.0,
-    "dsp": 172.49,
-    "google_android": 648.09,
-    "google_ios": 146.04,
-    "google_web": 293.68,
-    "influencer": 58.32,
-    "liftoff": 57.55,
-    "linear_tv": 359.07,
-    "meta_android": 163.51,
-    "meta_ios": 220.26,
-    "meta_web": 496.6,
-    "others": 1.57,
-    "podcast": 60.16,
-    "tiktok_android": 141.1,
-    "tiktok_ios": 350.12,
-    "tiktok_web": 157.38
+    "apple_search": 338.01,
+    "applovin_android": 501.38,
+    "applovin_ios": 407.77,
+    "ctv": 146.89,
+    "dsp": 257.52,
+    "google_android": 719.09,
+    "google_ios": 203.35,
+    "google_web": 288.45,
+    "influencer": 81.05,
+    "liftoff": 68.75,
+    "linear_tv": 547.98,
+    "meta_android": 172.8,
+    "meta_ios": 262.33,
+    "meta_web": 482.28,
+    "others": 1.95,
+    "podcast": 73.02,
+    "tiktok_android": 122.09,
+    "tiktok_ios": 331.08,
+    "tiktok_web": 157.35
   },
   "benchmarks": {
     "meta_ios": {

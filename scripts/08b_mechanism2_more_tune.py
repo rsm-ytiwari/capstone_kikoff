@@ -21,9 +21,15 @@ Lift tests used:
     - Meta May 2025 (Kikoff_LiftStudy_0525):    iOS, Android, Web
     - TikTok Aug-Sep 2025:                       iOS, Android, Web
     - CTV Oct-Nov 2025:                          combined (no platform split)
+    - Meta Jan 2026 (Kick Off January CLS-BLS): iOS, Android, Web — wide σ
 
-Meta Jan 2026 excluded: study cancelled, iOS lift implausible ($1,350 iCAC),
-only 10 conversions — data insufficient for reliable prior.
+Meta Jan 2026 RE-INCLUDED per D019-reversal (2026-05-18, meeting 6).
+Cancelled 3-day study; iOS had only 10 conversions (implausible $1,350 iCAC),
+but Android (365 conv, 99.9%) and Web (1,122 conv, 99.9%) had real data.
+Per Abheek 34:21 ("It messed up growth strategies, but whatever it was,
+it was the truth that happened during those three days"), included as a
+wide-σ windowed prior (3× max(δ_y, 30)) so the data is present but barely
+constrains the model — for completeness, not as a tight constraint.
 
 Run from repo root:
     my-notebook-project/.venv/bin/python scripts/08_mechanism2_windowed.py
@@ -44,6 +50,7 @@ import pandas as pd
 import pymc as pm
 import arviz as az
 from pymc_marketing.mmm import MMM, GeometricAdstock, LogisticSaturation
+from pymc_extras.prior import Prior
 
 from src.config import SPEND_FILE, LTV_FILE, OUT_P2_04
 
@@ -56,21 +63,36 @@ print(f"OUT_P2_04:  {OUT_P2_04}\n")
 # Lift test reference table (from Kikoff_data_incrementality.csv)
 # Format: (label, channel_col, test_start_inclusive, test_end_inclusive,
 #           delta_y_conversions, sigma_conversions)
-# sigma: Meta/TikTok = 30% of delta_y (heuristic — no CI in CSV, per D020).
-# CTV = 373, CI-derived from 95% CI [1109, 2570]: (2570-1109)/2/1.96 ≈ 373 (per D020).
-# Test ends are inclusive (end_exclusive - 1 day from the CSV)
+# sigma:
+#   Meta May 2025 + TikTok Aug 2025: σ = 10% of δ_y (Path B per D022,
+#     literature-aligned default).
+#     σ-ladder diagnostic 2026-05-18: 30% (old) → 10% (Meta Web $652→$466,
+#     R-hat/ESS pass) → 5% (Meta Web $466→$455, R-hat 1.107/ESS 27 FAIL).
+#     σ=5% diagnostic preserved at metrics/mechanism2b_convergence_sigma5_diagnostic.json.
+#     Conclusion: σ is not the lever — Meta Web's elevated iCAC is structural
+#     (saturation at full-scale spend vs test-window measurement; the lift
+#     test ran at 1/70th typical Meta Web spend). σ=10% reverted as canonical.
+#   CTV: σ = 373, CI-derived from 95% CI [1109, 2570] (D020 unchanged).
+#   Meta Jan 2026: σ = 3 × max(δ_y, 30) — deliberately wide (D019-rev,
+#     cancelled study; include for completeness, not as a tight constraint).
+# Test ends are inclusive (end_exclusive - 1 day from the CSV).
 # ---------------------------------------------------------------------------
 LIFT_TESTS = [
-    # Meta May 2025 — Kikoff_LiftStudy_0525 (99.9% confidence, completed)
-    ("meta_ios_may25",     "meta_ios",      "2025-05-06", "2025-05-13",  1_156.0,  347.0),
-    ("meta_android_may25", "meta_android",  "2025-05-06", "2025-05-13",  1_405.0,  422.0),
-    ("meta_web_may25",     "meta_web",      "2025-05-06", "2025-05-13",  1_128.0,  338.0),
-    # TikTok Aug-Sep 2025 (holdout 3-cell study)
-    ("tiktok_ios_aug25",     "tiktok_ios",     "2025-08-22", "2025-09-14",    569.0,  171.0),
-    ("tiktok_android_aug25", "tiktok_android", "2025-08-22", "2025-09-14",    651.0,  195.0),
-    ("tiktok_web_aug25",     "tiktok_web",     "2025-08-22", "2025-09-14",  6_215.0, 1_865.0),
-    # CTV Oct-Nov 2025 (geo lift test, 50% holdout, 95% CI); sigma CI-derived per D020
+    # Meta May 2025 — Kikoff_LiftStudy_0525 (99.9% confidence; Path B σ = 10% δ_y).
+    ("meta_ios_may25",     "meta_ios",      "2025-05-06", "2025-05-13",  1_156.0,  115.6),
+    ("meta_android_may25", "meta_android",  "2025-05-06", "2025-05-13",  1_405.0,  140.5),
+    ("meta_web_may25",     "meta_web",      "2025-05-06", "2025-05-13",  1_128.0,  112.8),
+    # TikTok Aug-Sep 2025 (holdout 3-cell; Path B σ = 10% δ_y).
+    ("tiktok_ios_aug25",     "tiktok_ios",     "2025-08-22", "2025-09-14",    569.0,   56.9),
+    ("tiktok_android_aug25", "tiktok_android", "2025-08-22", "2025-09-14",    651.0,   65.1),
+    ("tiktok_web_aug25",     "tiktok_web",     "2025-08-22", "2025-09-14",  6_215.0,  621.5),
+    # CTV Oct-Nov 2025 (geo lift, 50% holdout, 95% CI). σ unchanged at 373 (D020).
     ("ctv_oct25",          "ctv",           "2025-10-06", "2025-11-01",  1_840.0,  373.0),
+    # Meta Jan 2026 — Kick Off January CLS-BLS (cancelled; D019-reversal).
+    # Wide σ (3× max(δ_y, 30)) keeps the prior present but barely informative.
+    ("meta_ios_jan26",     "meta_ios",      "2026-01-03", "2026-01-07",     10.0,    90.0),
+    ("meta_android_jan26", "meta_android",  "2026-01-03", "2026-01-07",    365.0, 1_095.0),
+    ("meta_web_jan26",     "meta_web",      "2026-01-03", "2026-01-07",  1_122.0, 3_366.0),
 ]
 
 # ---------------------------------------------------------------------------
@@ -183,7 +205,19 @@ for label, ch, t_start_str, t_end_str, delta_y, sigma in LIFT_TESTS:
 # ---------------------------------------------------------------------------
 mmm = MMM(
     adstock=GeometricAdstock(l_max=8),  # D018: l_max=8 globally; CTV needs >=6 (half-life=6)
-    saturation=LogisticSaturation(),
+    # M3.5 canonical: tighter prior on lam (saturation rate) per Lever C
+    # diagnostic 2026-05-18. Default LogisticSaturation lam prior left the
+    # posterior weakly informed (ESS 687); Gamma(α=2, β=2) (mean=1, mode=0.5)
+    # discourages aggressive saturation and dramatically improves convergence
+    # (ESS 2218, R-hat 1.003). Meta Web iCAC essentially unchanged ($466
+    # → $470) — confirming the structural finding: saturation prior is not
+    # the lever; the data drives Meta Web's full-scale iCAC to ~$470.
+    saturation=LogisticSaturation(
+        priors={
+            "lam":  Prior("Gamma",      alpha=2, beta=2, dims="channel"),
+            "beta": Prior("HalfNormal", sigma=2,         dims="channel"),
+        }
+    ),
     date_column="date",
     channel_columns=channel_columns,
 )
@@ -292,54 +326,86 @@ baseline_pct   = 1.0 - (total_contrib / total_y)
 
 print(f"Total y (conversions):  {total_y:.0f}")
 print(f"Total channel contrib:  {total_contrib:.0f}  ({total_contrib/total_y*100:.1f}% of y)")
-print(f"Baseline %:             {baseline_pct*100:.1f}%  → {'PASS' if baseline_pct < 0.8 else 'WARN: >80%'}")
+print(f"Baseline %:             {baseline_pct*100:.1f}%  → {'PASS (<20% Kikoff)' if baseline_pct < 0.20 else 'FAIL (>20%)'}")
 
-icac = {}
+# Aggregate iCAC (full-history) — retained as a diagnostic only.
+# D023 deprecated this as a gate: aggregate compares full-history average
+# to a test-window measurement, which is methodologically wrong.
+icac_aggregate = {}
 for ch in channel_columns:
     sp = float(X_weekly[ch].sum())
     co = float(chan_sum[ch])
-    icac[ch] = round(sp / co, 2) if co > 0 else None
+    icac_aggregate[ch] = round(sp / co, 2) if co > 0 else None
 
 # ---------------------------------------------------------------------------
-# Gate evaluation — tested channels with benchmarks from lift tests
+# Windowed-iCAC helper (D023): the model's implied iCAC restricted to the
+# lift-test weeks only. Compares apples-to-apples with the lift-test point
+# estimate (itself a test-window measurement). Replaces the aggregate gate.
+# ---------------------------------------------------------------------------
+# Align contributions to a date index (required for .loc[start:end] slicing).
+# The contribution APIs return either a date-indexed or integer-indexed
+# DataFrame; overwrite with week_starts to be safe.
+contributions.index = pd.to_datetime(week_starts.values)
+
+def windowed_icac(channel: str, start: str, end: str) -> float | None:
+    """iCAC within a date window: spend_sum / contribution_sum.
+
+    Uses the same week-overlap convention as the lift-test prior (see lines
+    ~191): any W-MON-labelled week whose Monday is within [start - 6d, end]
+    overlaps the test period. Without the -6d adjustment, a test starting
+    Tue/Wed would miss its containing week label.
+    """
+    start_ts = pd.Timestamp(start) - pd.Timedelta(days=6)
+    end_ts   = pd.Timestamp(end)
+    mask_X = (week_starts >= start_ts) & (week_starts <= end_ts)
+    spend_w = float(X_weekly.loc[mask_X.values, channel].sum())
+    contrib_w = float(contributions.loc[start_ts:end_ts, channel].sum())
+    return round(spend_w / contrib_w, 2) if contrib_w > 0 else None
+
+# ---------------------------------------------------------------------------
+# Gate evaluation (D023 windowed gate; D021 baseline <20%; D024 no ordering)
 # ---------------------------------------------------------------------------
 benchmarks = {
-    "meta_ios":       135.48,
-    "meta_android":   63.06,
-    "meta_web":       156.89,
-    "tiktok_ios":     108.83,
-    "tiktok_android": 81.68,
-    "tiktok_web":     112.12,
-    "ctv":            135.05,
+    # channel: (point_estimate, test_start, test_end)
+    "meta_ios":       (135.48, "2025-05-06", "2025-05-13"),
+    "meta_android":   ( 63.06, "2025-05-06", "2025-05-13"),
+    "meta_web":       (156.89, "2025-05-06", "2025-05-13"),
+    "tiktok_ios":     (108.83, "2025-08-22", "2025-09-14"),
+    "tiktok_android": ( 81.68, "2025-08-22", "2025-09-14"),
+    "tiktok_web":     (112.12, "2025-08-22", "2025-09-14"),
+    "ctv":            (135.05, "2025-10-06", "2025-11-01"),
 }
 
-gates = {}
-print(f"\n{'Channel':<22} {'iCAC':>8}  {'Benchmark':>10}  {'±50%':>6}  {'Gate'}")
-print("-" * 60)
-for ch, bench in benchmarks.items():
-    v = icac.get(ch)
-    if v is not None:
-        in50 = bench * 0.5 <= v <= bench * 1.5
-        gates[f"gate_icac_{ch}"] = in50
-        print(f"  {ch:<20} ${v:>7.2f}  ${bench:>9.2f}  {'PASS' if in50 else 'FAIL':>6}")
-    else:
-        gates[f"gate_icac_{ch}"] = False
-        print(f"  {ch:<20} {'None':>8}  ${bench:>9.2f}  {'FAIL':>6}")
+# Truth-band tolerance per channel (D023). CTV uses ±$15 (CI-derived);
+# all others ±$50 (Abheek 45:13–45:36 truth band).
+TOLERANCE = {"ctv": 15.0}
+DEFAULT_TOLERANCE = 50.0
 
-# Ordering gate: for Meta, iOS iCAC should exceed Android (iOS users more expensive)
-ios_icac = icac.get("meta_ios") or 0.0
-and_icac = icac.get("meta_android") or 0.0
-ordering_gate = ios_icac > and_icac
-gates["gate_ordering_meta_ios_gt_android"] = ordering_gate
-print(f"\n  Meta iOS > Android iCAC: {'PASS' if ordering_gate else 'FAIL'}  "
-      f"(iOS=${ios_icac:.2f}, Android=${and_icac:.2f})")
+windowed_icac_map = {}
+gates = {}
+print(f"\n{'Channel':<22} {'Win iCAC':>9}  {'Bench':>7}  {'Band':>15}  {'Gate'}")
+print("-" * 70)
+for ch, (bench, t_start, t_end) in benchmarks.items():
+    tol = TOLERANCE.get(ch, DEFAULT_TOLERANCE)
+    v = windowed_icac(ch, t_start, t_end)
+    windowed_icac_map[ch] = v
+    in_band = (v is not None) and (bench - tol <= v <= bench + tol)
+    gates[f"gate_icac_windowed_{ch}"] = in_band
+    v_str = f"${v:>8.2f}" if v is not None else "    None "
+    print(f"  {ch:<20} {v_str}  ${bench:>6.2f}  ${bench-tol:>5.0f}-${bench+tol:<5.0f}  {'PASS' if in_band else 'FAIL'}")
+
+# D024: ordering gate REMOVED. Neither iOS>Android nor Android>iOS is a
+# remediation target (Abheek 36:56: σ explains deviation OR Android-heavy
+# customer base + saturation explains it; either direction acceptable).
+
+# D021: baseline threshold tightened from <80% to <20% (Kikoff-specific).
 print(f"\n  Rhat < 1.05:   {'PASS' if rhat_gate else 'FAIL'}  ({rhat_max:.4f})")
 print(f"  ESS > 400:     {'PASS' if ess_gate else 'FAIL'}  ({ess_min:.0f})")
-print(f"  Baseline <80%: {'PASS' if baseline_pct < 0.8 else 'WARN'}  ({baseline_pct*100:.1f}%)")
+print(f"  Baseline <20%: {'PASS' if baseline_pct < 0.20 else 'FAIL'}  ({baseline_pct*100:.1f}%)")
 
 gates["gate_rhat_pass"]     = rhat_gate
 gates["gate_ess_pass"]      = ess_gate
-gates["gate_baseline_pass"] = baseline_pct < 0.8
+gates["gate_baseline_pass"] = baseline_pct < 0.20
 
 all_pass = all(gates.values())
 print(f"\nAll M3 gates passed: {all_pass}")
@@ -364,15 +430,19 @@ result = {
         "ess_gate_pass":  ess_gate,
     },
     "baseline_pct": round(baseline_pct, 4),
-    "icac": icac,
-    "benchmarks": benchmarks,
+    "windowed_icac": windowed_icac_map,
+    "icac_aggregate_diagnostic": icac_aggregate,
+    "benchmarks": {ch: {"point_estimate": be, "window_start": ts, "window_end": te,
+                        "tolerance": TOLERANCE.get(ch, DEFAULT_TOLERANCE)}
+                   for ch, (be, ts, te) in benchmarks.items()},
     "gates": gates,
     "all_gates_pass": all_pass,
     "contribution_api_used": api_used,
     "notes": (
-        "Mechanism 2 windowed priors. Lift test evidence restricted to weeks "
-        "overlapping with experimental test windows (not global). "
-        "Meta Jan 2026 excluded: study cancelled, only 10 iOS conversions."
+        "Mechanism 2 windowed priors. M3.5 calibration: D019-rev (Meta Jan 2026 "
+        "re-included with wide σ), D021 (baseline <20% Kikoff-specific), D022 "
+        "(Path B σ = 10% of δ_y for Meta + TikTok), D023 (windowed-iCAC gate "
+        "replaces aggregate), D024 (iOS>Android ordering gate removed)."
     ),
 }
 
@@ -382,18 +452,22 @@ with open(out_path, "w") as f:
 
 print(f"\nSaved: {out_path}")
 
-print("\n=== Script 08 Gate Summary ===")
+print("\n=== Script 08b Gate Summary (M3.5: D019-rev / D021 / D022 / D023 / D024) ===")
 print(f"  Rhat < 1.05:               {'PASS' if rhat_gate else 'FAIL'}  ({rhat_max:.4f})")
 print(f"  ESS > 400:                 {'PASS' if ess_gate else 'FAIL'}  ({ess_min:.0f})")
-print(f"  Baseline < 80%:            {'PASS' if baseline_pct < 0.8 else 'WARN'}  ({baseline_pct*100:.1f}%)")
-for ch, bench in benchmarks.items():
-    g = gates.get(f"gate_icac_{ch}", False)
-    v = icac.get(ch)
-    print(f"  iCAC {ch:<22}: {'PASS' if g else 'FAIL'}  "
-          f"(${v:.2f} vs benchmark ${bench:.2f})" if v else f"  iCAC {ch:<22}: FAIL  (None)")
-print(f"  Meta iOS > Android iCAC:   {'PASS' if ordering_gate else 'FAIL'}")
-print(f"\nAll M3 gates passed: {all_pass}")
+print(f"  Baseline < 20%:            {'PASS' if baseline_pct < 0.20 else 'FAIL'}  ({baseline_pct*100:.1f}%)")
+for ch, (bench, t_start, t_end) in benchmarks.items():
+    g = gates.get(f"gate_icac_windowed_{ch}", False)
+    v = windowed_icac_map.get(ch)
+    tol = TOLERANCE.get(ch, DEFAULT_TOLERANCE)
+    if v is not None:
+        print(f"  iCAC_windowed {ch:<18}: {'PASS' if g else 'FAIL'}  "
+              f"(${v:.2f} vs benchmark ${bench:.2f} ± ${tol:.0f})")
+    else:
+        print(f"  iCAC_windowed {ch:<18}: FAIL  (None)")
+# D024: iOS > Android ordering gate removed; no print line here.
+print(f"\nAll M3.5 gates passed: {all_pass}")
 if all_pass:
-    print("\nREADY: Proceed to Phase B (Meta-Web output charts) after user APPROVED.")
+    print("\nREADY: Proceed to Script 10 (Meta-Web charts) and Task 11 (state log + promotion proposal).")
 else:
-    print("\nSTOP: Surface failing gates to user before proceeding.")
+    print("\nFailing gates surfaced above. Decision point if Meta Web windowed iCAC outside $106–$206.")
