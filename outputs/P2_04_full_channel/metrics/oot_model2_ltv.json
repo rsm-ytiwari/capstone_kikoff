@@ -1,0 +1,155 @@
+{
+  "script": "11_oot_validation",
+  "canonical_version": "M3.5b_fix_a_2026-05-19_oot_v1",
+  "model": "Model 2 (y=LTV_3YEAR)",
+  "split": {
+    "train_start": "2024-07-01",
+    "train_end": "2025-12-29",
+    "test_start": "2026-01-05",
+    "test_end": "2026-03-30",
+    "n_train_weeks": 79,
+    "n_test_weeks": 13
+  },
+  "avg_ltv_train": 206.9299,
+  "convergence": {
+    "rhat_max": 1.0036,
+    "ess_min": 2097.8,
+    "divergences": 0
+  },
+  "oot_metrics": {
+    "mape_pct": 15.129,
+    "smape_pct": 13.84,
+    "mae": 572376.082,
+    "rmse": 623115.408,
+    "hdi_89_coverage_pct": 7.7
+  },
+  "predicted_weekly": [
+    4161533.120901971,
+    4136622.0459857373,
+    4233298.353622744,
+    4239765.031602785,
+    4309860.626217664,
+    4343473.877719532,
+    4329899.661730539,
+    4530060.57767851,
+    4798324.732035797,
+    4936224.9218942085,
+    4941481.7551918905,
+    4939999.836585631,
+    4993333.0788062
+  ],
+  "predicted_hdi_lo": [
+    3971122.7570406375,
+    3938839.4443442863,
+    4055179.792722845,
+    4055057.5271572955,
+    4114460.3252878874,
+    4145430.7907546586,
+    4130909.8454237,
+    4302948.205436362,
+    4560290.645850062,
+    4659598.578279027,
+    4664336.6507716235,
+    4660832.816852136,
+    4692024.254317488
+  ],
+  "predicted_hdi_hi": [
+    4340214.23404586,
+    4325932.424031952,
+    4441458.807355923,
+    4428442.696020797,
+    4488839.880682944,
+    4519312.0324157765,
+    4496270.144622233,
+    4726448.220390899,
+    5045463.906921315,
+    5172744.050247874,
+    5202341.910030297,
+    5202030.381780169,
+    5250466.610660097
+  ],
+  "actual_weekly": [
+    3894237.403314303,
+    3571816.984877185,
+    3630261.744988974,
+    3375278.3177659777,
+    3869776.646989061,
+    3602700.525997656,
+    3334905.851100583,
+    3909551.130516049,
+    4852344.034099876,
+    4521873.698514302,
+    4425643.048014345,
+    4083299.7525424752,
+    4489338.021347384
+  ],
+  "test_dates": [
+    "2026-01-05",
+    "2026-01-12",
+    "2026-01-19",
+    "2026-01-26",
+    "2026-02-02",
+    "2026-02-09",
+    "2026-02-16",
+    "2026-02-23",
+    "2026-03-02",
+    "2026-03-09",
+    "2026-03-16",
+    "2026-03-23",
+    "2026-03-30"
+  ],
+  "lift_tests_in_training": [
+    {
+      "label": "meta_ios_may25",
+      "channel": "meta_ios",
+      "n_training_weeks": 2
+    },
+    {
+      "label": "meta_android_may25",
+      "channel": "meta_android",
+      "n_training_weeks": 2
+    },
+    {
+      "label": "meta_web_may25",
+      "channel": "meta_web",
+      "n_training_weeks": 2
+    },
+    {
+      "label": "tiktok_ios_aug25",
+      "channel": "tiktok_ios",
+      "n_training_weeks": 4
+    },
+    {
+      "label": "tiktok_android_aug25",
+      "channel": "tiktok_android",
+      "n_training_weeks": 4
+    },
+    {
+      "label": "tiktok_web_aug25",
+      "channel": "tiktok_web",
+      "n_training_weeks": 4
+    },
+    {
+      "label": "ctv_oct25",
+      "channel": "ctv",
+      "n_training_weeks": 4
+    },
+    {
+      "label": "meta_ios_jan26",
+      "channel": "meta_ios",
+      "n_training_weeks": 1
+    },
+    {
+      "label": "meta_android_jan26",
+      "channel": "meta_android",
+      "n_training_weeks": 1
+    },
+    {
+      "label": "meta_web_jan26",
+      "channel": "meta_web",
+      "n_training_weeks": 1
+    }
+  ],
+  "lift_test_leak_note": "Meta Jan 2026 lift window (2026-01-03 \u2192 2026-01-07) overlaps W-MON week 2025-12-29 (training) only \u2014 W-MON week 2026-01-05 falls in the hold-out. DP-D Option 3 (approved 2026-05-19): prior kept verbatim from canonical Fix-A table. Note that with only 1 of the canonical 2 W-MON weeks remaining in training, the prior's per-week constraint is stronger than the canonical M3.5b fit; wide \u03c3 (3\u00d7 max(\u03b4,30)) limits the magnitude of this effect.",
+  "notes": "M7 OOT validation, LTV-scaled. avg_ltv computed on training period only to avoid leaking test-period LTV/customer ratio into the prior scaling. LIFT_TESTS rescaled per row via \u00d7 avg_ltv_train. Same MMM config as 08b/09 (Lever C lam Gamma(2,2), HalfNormal(2) beta, GeometricAdstock l_max=8). OOS API per plan \u00a72."
+}

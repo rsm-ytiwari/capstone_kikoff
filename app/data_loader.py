@@ -150,3 +150,28 @@ def load_convergence() -> dict:
 def load_lift_metrics() -> dict:
     """Alias for load_convergence — exposes windowed_icac, gates, benchmarks, etc."""
     return load_convergence()
+
+
+# ── M7 OOT validation ───────────────────────────────────────────────────────
+# Produced by scripts/11_oot_validation.py. Keys: "m1" (conversions) | "m2" (LTV).
+_OOT_FILES = {
+    "m1": ("oot_model1_conversions.json", "oot_model1_conversions_timeseries.csv"),
+    "m2": ("oot_model2_ltv.json",         "oot_model2_ltv_timeseries.csv"),
+}
+
+
+@st.cache_data(ttl=300)
+def load_oot(model: str) -> tuple[dict, pd.DataFrame]:
+    """Load OOT metrics JSON + predicted-vs-actual time-series for one model.
+
+    model: "m1" for conversions (Model 1) or "m2" for LTV_3YEAR (Model 2).
+    Returns (metrics_dict, timeseries_df with date/actual/predicted_mean/
+    predicted_hdi_lo/predicted_hdi_hi columns).
+    """
+    if model not in _OOT_FILES:
+        raise ValueError(f"Unknown OOT model {model!r}; expected 'm1' or 'm2'")
+    json_name, csv_name = _OOT_FILES[model]
+    with open(_METRIC_DIR / json_name) as f:
+        metrics = json.load(f)
+    ts = pd.read_csv(_CHART_DIR / csv_name, parse_dates=["date"])
+    return metrics, ts

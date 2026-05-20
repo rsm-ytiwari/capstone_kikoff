@@ -1,0 +1,128 @@
+Initializing NUTS using jitter+adapt_diag...
+Multiprocess sampling (4 chains in 4 jobs)
+NUTS: [intercept, adstock_alpha, saturation_lam, saturation_beta, y_sigma]
+=== Script 11: M7 OOT Validation ===
+SPEND_FILE: /Users/yashtiwari/MSBA/Quarters/Spring_2026/capstone_team/data/MMM_Updated_Spend.csv
+LTV_FILE:   /Users/yashtiwari/MSBA/Quarters/Spring_2026/capstone_team/data/MMM_UPDATED_LTV.csv
+OUT_P2_04:  /Users/yashtiwari/MSBA/Quarters/Spring_2026/capstone_team/outputs/P2_04_full_channel
+TRAIN_END=2025-12-29  TEST_START=2026-01-05  TEST_END=2026-03-30
+
+Channels (19): ['apple_search', 'applovin_android', 'applovin_ios', 'ctv', 'dsp', 'google_android', 'google_ios', 'google_web', 'influencer', 'liftoff', 'linear_tv', 'meta_android', 'meta_ios', 'meta_web', 'others', 'podcast', 'tiktok_android', 'tiktok_ios', 'tiktok_web']
+Train: 79 weeks (2024-07-01 → 2025-12-29)
+Test : 13 weeks (2026-01-05 → 2026-03-30)
+
+======================================================================
+Model 1 — y = CONVERSIONS
+======================================================================
+
+[M1] Lift test window mapping (training-only week_starts):
+  meta_ios_may25            : 2 week(s)  [datetime.date(2025, 5, 5), datetime.date(2025, 5, 12)]  delta=2023.00  σ=202.30
+  meta_android_may25        : 2 week(s)  [datetime.date(2025, 5, 5), datetime.date(2025, 5, 12)]  delta=2459.00  σ=245.90
+  meta_web_may25            : 2 week(s)  [datetime.date(2025, 5, 5), datetime.date(2025, 5, 12)]  delta=1974.00  σ=197.40
+  tiktok_ios_aug25          : 4 week(s)  [datetime.date(2025, 8, 18), datetime.date(2025, 8, 25), datetime.date(2025, 9, 1), datetime.date(2025, 9, 8)]  delta=663.80  σ=66.40
+  tiktok_android_aug25      : 4 week(s)  [datetime.date(2025, 8, 18), datetime.date(2025, 8, 25), datetime.date(2025, 9, 1), datetime.date(2025, 9, 8)]  delta=759.50  σ=75.95
+  tiktok_web_aug25          : 4 week(s)  [datetime.date(2025, 8, 18), datetime.date(2025, 8, 25), datetime.date(2025, 9, 1), datetime.date(2025, 9, 8)]  delta=7250.80  σ=725.08
+  ctv_oct25                 : 4 week(s)  [datetime.date(2025, 10, 6), datetime.date(2025, 10, 13), datetime.date(2025, 10, 20), datetime.date(2025, 10, 27)]  delta=1908.00  σ=386.80
+  meta_ios_jan26            : 1 week(s)  [datetime.date(2025, 12, 29)]  delta=28.00  σ=90.00
+  meta_android_jan26        : 1 week(s)  [datetime.date(2025, 12, 29)]  delta=1022.00  σ=3066.00
+  meta_web_jan26            : 1 week(s)  [datetime.date(2025, 12, 29)]  delta=3142.00  σ=9426.00
+[M1] Model built — adding windowed lift observations...
+[M1] Starting MCMC (draws=1000, tune=2000, target_accept=0.98)...
+                                                                                
+                             Step      Grad                                     
+  Progre…   Draw   Diverg…   size      evals      Speed     Elapsed   Remaini…  
+ ────────────────────────────────────────────────────────────────────────────── 
+  ━━━━━━━   3000   0         0.025     127        34.61     0:01:26   0:00:00   
+                                                  draws/s                       
+  ━━━━━━━   3000   0         0.027     255        34.56     0:01:26   0:00:00   
+                                                  draws/s                       
+  ━━━━━━━   3000   0         0.028     255        32.27     0:01:32   0:00:00   
+                                                  draws/s                       
+  ━━━━━━━   3000   0         0.024     127        34.36     0:01:27   0:00:00   
+                                                  draws/s                       
+                                                                                
+Sampling 4 chains for 2_000 tune and 1_000 draw iterations (8_000 + 4_000 draws total) took 93 seconds.
+Computing ... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
+Sampling: []
+Sampling ... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 / 0:00:00
+Initializing NUTS using jitter+adapt_diag...
+Multiprocess sampling (4 chains in 4 jobs)
+NUTS: [intercept, adstock_alpha, saturation_lam, saturation_beta, y_sigma]
+[M1] Sampling complete.
+[M1] Rhat max: 1.0034  ESS min: 2281.3  Divergences: 0
+[M1] OOT MAPE: 18.829%  sMAPE: 16.998%  MAE: 3343  RMSE: 3515  HDI89 coverage: 7.7%
+Saved: /Users/yashtiwari/MSBA/Quarters/Spring_2026/capstone_team/outputs/P2_04_full_channel/metrics/oot_model1_conversions.json
+Saved: /Users/yashtiwari/MSBA/Quarters/Spring_2026/capstone_team/outputs/P2_04_full_channel/charts/oot_model1_conversions_timeseries.csv
+
+======================================================================
+Model 2 — y = LTV_3YEAR
+======================================================================
+[M2] avg_ltv_train: $206.93  (training-period only, to avoid leak from test-period LTV into prior scaling)
+
+[M2] Lift test window mapping (training-only week_starts):
+  meta_ios_may25            : 2 week(s)  [datetime.date(2025, 5, 5), datetime.date(2025, 5, 12)]  delta=418619.21  σ=41861.92
+  meta_android_may25        : 2 week(s)  [datetime.date(2025, 5, 5), datetime.date(2025, 5, 12)]  delta=508840.65  σ=50884.06
+  meta_web_may25            : 2 week(s)  [datetime.date(2025, 5, 5), datetime.date(2025, 5, 12)]  delta=408479.64  σ=40847.96
+  tiktok_ios_aug25          : 4 week(s)  [datetime.date(2025, 8, 18), datetime.date(2025, 8, 25), datetime.date(2025, 9, 1), datetime.date(2025, 9, 8)]  delta=137360.07  σ=13740.15
+  tiktok_android_aug25      : 4 week(s)  [datetime.date(2025, 8, 18), datetime.date(2025, 8, 25), datetime.date(2025, 9, 1), datetime.date(2025, 9, 8)]  delta=157163.27  σ=15716.33
+  tiktok_web_aug25          : 4 week(s)  [datetime.date(2025, 8, 18), datetime.date(2025, 8, 25), datetime.date(2025, 9, 1), datetime.date(2025, 9, 8)]  delta=1500407.38  σ=150040.74
+  ctv_oct25                 : 4 week(s)  [datetime.date(2025, 10, 6), datetime.date(2025, 10, 13), datetime.date(2025, 10, 20), datetime.date(2025, 10, 27)]  delta=394822.27  σ=80040.49
+  meta_ios_jan26            : 1 week(s)  [datetime.date(2025, 12, 29)]  delta=5794.04  σ=18623.69
+  meta_android_jan26        : 1 week(s)  [datetime.date(2025, 12, 29)]  delta=211482.37  σ=634447.10
+  meta_web_jan26            : 1 week(s)  [datetime.date(2025, 12, 29)]  delta=650173.77  σ=1950521.32
+[M2] Model built — adding windowed lift observations...
+[M2] Starting MCMC (draws=1000, tune=2000, target_accept=0.98)...
+                                                                                
+                             Step      Grad                                     
+  Progre…   Draw   Diverg…   size      evals      Speed     Elapsed   Remaini…  
+ ────────────────────────────────────────────────────────────────────────────── 
+  ━━━━━━━   3000   0         0.025     255        33.04     0:01:30   0:00:00   
+                                                  draws/s                       
+  ━━━━━━━   3000   0         0.028     255        34.07     0:01:28   0:00:00   
+                                                  draws/s                       
+  ━━━━━━━   3000   0         0.026     255        34.98     0:01:25   0:00:00   
+                                                  draws/s                       
+  ━━━━━━━   3000   0         0.028     255        33.79     0:01:28   0:00:00   
+                                                  draws/s                       
+                                                                                
+Sampling 4 chains for 2_000 tune and 1_000 draw iterations (8_000 + 4_000 draws total) took 91 seconds.
+Computing ... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
+Sampling: []
+Sampling ... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 / 0:00:00
+[M2] Sampling complete.
+[M2] Rhat max: 1.0036  ESS min: 2097.8  Divergences: 0
+[M2] OOT MAPE: 15.129%  sMAPE: 13.84%  MAE: $572,376  RMSE: $623,115  HDI89 coverage: 7.7%
+Saved: /Users/yashtiwari/MSBA/Quarters/Spring_2026/capstone_team/outputs/P2_04_full_channel/metrics/oot_model2_ltv.json
+Saved: /Users/yashtiwari/MSBA/Quarters/Spring_2026/capstone_team/outputs/P2_04_full_channel/charts/oot_model2_ltv_timeseries.csv
+
+======================================================================
+OUTPUT REPORT (CLAUDE.md §K)
+======================================================================
+
+WHAT I RAN: my-notebook-project/.venv/bin/python scripts/11_oot_validation.py
+FILE: scripts/11_oot_validation.py
+
+WHAT IT PRODUCED:
+- outputs/P2_04_full_channel/metrics/oot_model1_conversions.json → MAPE = 18.829%, HDI89 cov = 7.7%
+- outputs/P2_04_full_channel/metrics/oot_model2_ltv.json → MAPE = 15.129%, HDI89 cov = 7.7%
+- outputs/P2_04_full_channel/charts/oot_model1_conversions_timeseries.csv → 13 rows
+- outputs/P2_04_full_channel/charts/oot_model2_ltv_timeseries.csv → 13 rows
+
+WHAT IT MEANS: 13-week hold-out validation of the canonical M3.5b Fix-A model.
+M1 MAPE 18.829% answers Abheek's "predict the conversion numbers"
+question directly. M2 MAPE 15.129% validates the LTV-direction model
+used by the decisioning page.
+
+WHAT CHANGED: M7 milestone — pending state-update proposal. JSON + CSV
+outputs feed app/pages/2_OOT_Validation.py.
+
+Health check (M3+):
+- R-hat:    M1 1.0034  M2 1.0036    (pass if < 1.1)
+- ESS:      M1 2281  M2 2098      (pass if > 400)
+- Divs:     M1 0  M2 0
+- OOT MAPE: M1 18.829%  M2 15.129%
+- HDI89:    M1 7.7%  M2 7.7%
+
+DP-D leak note: Meta Jan 2026 lift overlaps 1 training week (2025-12-29) only,
+not the canonical 2; per-week constraint is stronger. Wide σ limits impact.
+

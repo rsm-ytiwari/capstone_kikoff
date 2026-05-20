@@ -477,6 +477,62 @@ def fig_iroas_saturation(df: pd.DataFrame, median_spend: float,
     return fig
 
 
+# ── Chart 9: OOT Predicted vs Actual ────────────────────────────────────────
+def fig_oot_predicted_vs_actual(df: pd.DataFrame, title: str, y_label: str,
+                                dollar_axis: bool = False) -> go.Figure:
+    """Predicted vs actual over the OOT hold-out, with 89% HDI ribbon.
+
+    df columns: date, actual, predicted_mean, predicted_hdi_lo, predicted_hdi_hi.
+    dollar_axis=True formats y as currency (Model 2 / LTV). False formats as
+    plain integer count (Model 1 / conversions).
+    """
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=df["date"], y=df["predicted_hdi_hi"], mode="lines",
+        line=dict(width=0), showlegend=False, hoverinfo="skip",
+    ))
+    fig.add_trace(go.Scatter(
+        x=df["date"], y=df["predicted_hdi_lo"], mode="lines",
+        line=dict(width=0), fill="tonexty", fillcolor=BLUE_FILL,
+        name="89% HDI (predicted)", hoverinfo="skip",
+    ))
+    fig.add_trace(go.Scatter(
+        x=df["date"], y=df["predicted_mean"], mode="lines+markers",
+        line=dict(color=BLUE, width=2, dash="dash"),
+        marker=dict(size=6),
+        name="Predicted (posterior mean)",
+        hovertemplate=(
+            "Week: %{x|%Y-%m-%d}<br>"
+            + ("Predicted: $%{y:,.0f}" if dollar_axis else "Predicted: %{y:,.0f}")
+            + "<extra></extra>"
+        ),
+    ))
+    fig.add_trace(go.Scatter(
+        x=df["date"], y=df["actual"], mode="lines+markers",
+        line=dict(color=ORANGE, width=2),
+        marker=dict(size=6, symbol="circle"),
+        name="Actual",
+        hovertemplate=(
+            "Week: %{x|%Y-%m-%d}<br>"
+            + ("Actual: $%{y:,.0f}" if dollar_axis else "Actual: %{y:,.0f}")
+            + "<extra></extra>"
+        ),
+    ))
+
+    fig.update_layout(
+        **LAYOUT_BASE,
+        title=dict(text=title, font=dict(size=14)),
+        xaxis_title="Week (hold-out)",
+        yaxis_title=y_label,
+        height=420,
+    )
+    if dollar_axis:
+        fig.update_yaxes(tickprefix="$", tickformat=",.0f")
+    else:
+        fig.update_yaxes(tickformat=",.0f")
+    return fig
+
+
 # ── Chart 8: Spend Distribution ─────────────────────────────────────────────
 def fig_spend_dist(df: pd.DataFrame,
                    channel_col: str | None = None,

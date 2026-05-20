@@ -1,0 +1,154 @@
+{
+  "script": "11_oot_validation",
+  "canonical_version": "M3.5b_fix_a_2026-05-19_oot_v1",
+  "model": "Model 1 (y=CONVERSIONS)",
+  "split": {
+    "train_start": "2024-07-01",
+    "train_end": "2025-12-29",
+    "test_start": "2026-01-05",
+    "test_end": "2026-03-30",
+    "n_train_weeks": 79,
+    "n_test_weeks": 13
+  },
+  "convergence": {
+    "rhat_max": 1.0034,
+    "ess_min": 2281.3,
+    "divergences": 0
+  },
+  "oot_metrics": {
+    "mape_pct": 18.829,
+    "smape_pct": 16.998,
+    "mae": 3342.978,
+    "rmse": 3515.48,
+    "hdi_89_coverage_pct": 7.7
+  },
+  "predicted_weekly": [
+    20124.290485635676,
+    20049.325747216713,
+    20473.04039161452,
+    20490.613421961032,
+    20762.13205392262,
+    20927.7942556863,
+    20855.042111556308,
+    21717.133565792392,
+    22936.300260772703,
+    23570.642224504325,
+    23644.907853819775,
+    23646.91258453453,
+    23842.575794897446
+  ],
+  "predicted_hdi_lo": [
+    19337.501506969,
+    19256.306876634495,
+    19640.26540552342,
+    19653.500920129525,
+    19969.842476364942,
+    20110.871557416936,
+    20051.07121039189,
+    20714.08173765254,
+    21826.03615863916,
+    22426.73607373092,
+    22438.72413861802,
+    22391.404326395303,
+    22560.953681848645
+  ],
+  "predicted_hdi_hi": [
+    20878.92675727524,
+    20857.983288556574,
+    21268.66876258069,
+    21255.35435819517,
+    21596.738253079322,
+    21748.58489191212,
+    21672.709439840426,
+    22581.725373654903,
+    23963.32575565305,
+    24692.365826692687,
+    24817.911839657656,
+    24743.067545704136,
+    24978.247175049273
+  ],
+  "actual_weekly": [
+    17470.0,
+    15870.0,
+    16140.0,
+    15931.0,
+    19016.0,
+    17457.0,
+    16237.0,
+    18174.0,
+    21979.0,
+    20947.0,
+    20615.0,
+    19206.0,
+    20540.0
+  ],
+  "test_dates": [
+    "2026-01-05",
+    "2026-01-12",
+    "2026-01-19",
+    "2026-01-26",
+    "2026-02-02",
+    "2026-02-09",
+    "2026-02-16",
+    "2026-02-23",
+    "2026-03-02",
+    "2026-03-09",
+    "2026-03-16",
+    "2026-03-23",
+    "2026-03-30"
+  ],
+  "lift_tests_in_training": [
+    {
+      "label": "meta_ios_may25",
+      "channel": "meta_ios",
+      "n_training_weeks": 2
+    },
+    {
+      "label": "meta_android_may25",
+      "channel": "meta_android",
+      "n_training_weeks": 2
+    },
+    {
+      "label": "meta_web_may25",
+      "channel": "meta_web",
+      "n_training_weeks": 2
+    },
+    {
+      "label": "tiktok_ios_aug25",
+      "channel": "tiktok_ios",
+      "n_training_weeks": 4
+    },
+    {
+      "label": "tiktok_android_aug25",
+      "channel": "tiktok_android",
+      "n_training_weeks": 4
+    },
+    {
+      "label": "tiktok_web_aug25",
+      "channel": "tiktok_web",
+      "n_training_weeks": 4
+    },
+    {
+      "label": "ctv_oct25",
+      "channel": "ctv",
+      "n_training_weeks": 4
+    },
+    {
+      "label": "meta_ios_jan26",
+      "channel": "meta_ios",
+      "n_training_weeks": 1
+    },
+    {
+      "label": "meta_android_jan26",
+      "channel": "meta_android",
+      "n_training_weeks": 1
+    },
+    {
+      "label": "meta_web_jan26",
+      "channel": "meta_web",
+      "n_training_weeks": 1
+    }
+  ],
+  "lift_test_leak_note": "Meta Jan 2026 lift window (2026-01-03 \u2192 2026-01-07) overlaps W-MON week 2025-12-29 (training) only \u2014 W-MON week 2026-01-05 falls in the hold-out. DP-D Option 3 (approved 2026-05-19): prior kept verbatim from canonical Fix-A table. Note that with only 1 of the canonical 2 W-MON weeks remaining in training, the prior's per-week constraint is stronger than the canonical M3.5b fit; wide \u03c3 (3\u00d7 max(\u03b4,30)) limits the magnitude of this effect.",
+  "notes": "M7 OOT validation. Canonical Fix-A LIFT_TESTS_CONV table kept verbatim per DP-D Option 3 (APPROVED 2026-05-19). MMM config identical to 08b (Lever C lam Gamma(2,2), HalfNormal(2) beta, GeometricAdstock l_max=8). OOS API: mmm.sample_posterior_predictive(X_test, extend_idata=False, include_last_observations=True, var_names=['y_original_scale'], random_seed=42)."
+}
