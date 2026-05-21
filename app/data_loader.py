@@ -152,6 +152,20 @@ def load_lift_metrics() -> dict:
     return load_convergence()
 
 
+@st.cache_data(ttl=300)
+def load_baseline_split() -> dict:
+    """D029 (2026-05-20) canonical baseline-decomposition artifact.
+
+    Produced by scripts/15_baseline_split.py from the canonical M2 trace.
+    Schema: aggregate (in_window_baseline_pct, out_window_baseline_pct, …),
+    per_channel (7 lift-tested channels with concentration_ratio_in_over_out),
+    reference (Abheek organic anchor + apples-to-apples band).
+    """
+    p = _METRIC_DIR / "baseline_split.json"
+    with open(p) as f:
+        return json.load(f)
+
+
 # ── M7 OOT validation ───────────────────────────────────────────────────────
 # Produced by scripts/11_oot_validation.py. Keys: "m1" (conversions) | "m2" (LTV).
 _OOT_FILES = {

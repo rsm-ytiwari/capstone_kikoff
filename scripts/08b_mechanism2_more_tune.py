@@ -340,7 +340,7 @@ baseline_pct   = 1.0 - (total_contrib / total_y)
 
 print(f"Total y (conversions):  {total_y:.0f}")
 print(f"Total channel contrib:  {total_contrib:.0f}  ({total_contrib/total_y*100:.1f}% of y)")
-print(f"Baseline %:             {baseline_pct*100:.1f}%  → {'PASS (<20% Kikoff)' if baseline_pct < 0.20 else 'FAIL (>20%)'}")
+print(f"Baseline %:             {baseline_pct*100:.1f}%  (D029: gate deprecated; reported only — see baseline_split.json + Methodology page)")
 
 # Aggregate iCAC (full-history) — retained as a diagnostic only.
 # D023 deprecated this as a gate: aggregate compares full-history average
@@ -377,7 +377,7 @@ def windowed_icac(channel: str, start: str, end: str) -> float | None:
     return round(spend_w / contrib_w, 2) if contrib_w > 0 else None
 
 # ---------------------------------------------------------------------------
-# Gate evaluation (D023 windowed gate; D021 baseline <20%; D024 no ordering)
+# Gate evaluation (D023 windowed gate; D029 baseline gate DEPRECATED — see baseline_disposition; D024 no ordering)
 # ---------------------------------------------------------------------------
 benchmarks = {
     # channel: (point_estimate, test_start, test_end)
@@ -412,14 +412,24 @@ for ch, (bench, t_start, t_end) in benchmarks.items():
 # remediation target (Abheek 36:56: σ explains deviation OR Android-heavy
 # customer base + saturation explains it; either direction acceptable).
 
-# D021: baseline threshold tightened from <80% to <20% (Kikoff-specific).
+# D029 (2026-05-20): D021's <20% baseline gate DEPRECATED. Baseline % still
+# REPORTED (global + in-window/out-of-window split via scripts/15_baseline_split.py)
+# but no PASS/FAIL flag. See state/decisions_log.md D029 + app/pages/3_Methodology.py.
 print(f"\n  Rhat < 1.05:   {'PASS' if rhat_gate else 'FAIL'}  ({rhat_max:.4f})")
 print(f"  ESS > 400:     {'PASS' if ess_gate else 'FAIL'}  ({ess_min:.0f})")
-print(f"  Baseline <20%: {'PASS' if baseline_pct < 0.20 else 'FAIL'}  ({baseline_pct*100:.1f}%)")
+print(f"  Baseline %:    {baseline_pct*100:.1f}%  (D029: reported only; per-channel concentration is the new attribution-confidence diagnostic)")
 
 gates["gate_rhat_pass"]     = rhat_gate
 gates["gate_ess_pass"]      = ess_gate
-gates["gate_baseline_pass"] = baseline_pct < 0.20
+baseline_disposition = (
+    "D029 (2026-05-20): D021's <20% threshold gate DEPRECATED. Baseline % "
+    "reported only (no PASS/FAIL). Per-channel attribution concentration ratio "
+    "is the new diagnostic — see outputs/P2_04_full_channel/metrics/"
+    "baseline_split.json (script: scripts/15_baseline_split.py). Reframe: "
+    "Abheek's <20% target was framed against the attributed-revenue universe "
+    "(~65% of total LTV per Mtg 6 #13); architecturally unreachable on the "
+    "total-LTV universe without an attributed-revenue feed (Q36)."
+)
 
 all_pass = all(gates.values())
 print(f"\nAll M3 gates passed: {all_pass}")
@@ -444,6 +454,7 @@ result = {
         "ess_gate_pass":  ess_gate,
     },
     "baseline_pct": round(baseline_pct, 4),
+    "baseline_disposition": baseline_disposition,
     "windowed_icac": windowed_icac_map,
     "icac_aggregate_diagnostic": icac_aggregate,
     "benchmarks": {ch: {"point_estimate": be, "window_start": ts, "window_end": te,
@@ -469,10 +480,10 @@ with open(out_path, "w") as f:
 
 print(f"\nSaved: {out_path}")
 
-print("\n=== Script 08b Gate Summary (M3.5: D019-rev / D021 / D022 / D023 / D024) ===")
+print("\n=== Script 08b Gate Summary (M3.5: D019-rev / D022 / D023 / D024; D021 SUPERSEDED by D029 2026-05-20) ===")
 print(f"  Rhat < 1.05:               {'PASS' if rhat_gate else 'FAIL'}  ({rhat_max:.4f})")
 print(f"  ESS > 400:                 {'PASS' if ess_gate else 'FAIL'}  ({ess_min:.0f})")
-print(f"  Baseline < 20%:            {'PASS' if baseline_pct < 0.20 else 'FAIL'}  ({baseline_pct*100:.1f}%)")
+print(f"  Baseline %:                {baseline_pct*100:.1f}%  (D029: reported only; gate deprecated)")
 for ch, (bench, t_start, t_end) in benchmarks.items():
     g = gates.get(f"gate_icac_windowed_{ch}", False)
     v = windowed_icac_map.get(ch)

@@ -188,6 +188,8 @@
     "global_baseline_pct_our_model": 67.33,
     "missed_paid_attribution_pct_estimate": 32.33,
     "baseline_pct_on_attributed_universe_apples_to_apples": 49.74,
+    "baseline_pct_on_attributed_universe_range": "45.55-53.33",
+    "baseline_pct_on_attributed_universe_range_note": "\u00b15pp organic uncertainty: organic 30% \u2192 53.33%, organic 35% (anchor) \u2192 49.74%, organic 40% \u2192 45.55%. Cite as a band, not a point. Abheek's organic ~35% (Mtg 6 #13) is approximate.",
     "d021_target_pct_on_attributed_universe": 20.0,
     "gap_to_d021_target_pp": 29.74,
     "mechanistic_attribution_to_meta_web": "Meeting 6 fact #13: large portion of view-through attribution flows from Meta Web (scale-up \u2192 blended grows without attributed spike). Empirically consistent with our meta_web in/out concentration ratio 1.04x \u2014 the lift-prior is shifting Meta Web's level but not redistributing attribution into the test window, because Meta Web's true mechanism is view-through credit our X doesn't carry.",

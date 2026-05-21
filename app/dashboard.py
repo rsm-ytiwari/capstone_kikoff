@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import pandas as pd
 
 from app.data_loader import (
-    load_baseline, load_icac_time, load_iroas_time, load_ltv_time,
+    load_baseline, load_baseline_split, load_icac_time, load_iroas_time, load_ltv_time,
     load_icac_saturation, load_iroas_saturation, load_spend_weekly,
     load_convergence, CHANNEL_DISPLAY,
     CHANNELS_LIFT_TESTED, CHANNELS_UNTESTED, CANONICAL_VERSION,
@@ -160,17 +160,45 @@ spend_view      = filter_by_period(spend_df, period)
 # ── Model health status bar ──────────────────────────────────────────────────
 st.markdown("---")
 st.markdown("#### Model Health")
-mc1, mc2, mc3, mc4 = st.columns(4)
+# D029 (2026-05-20): D021 <20% baseline gate DEPRECATED. Replaced single global
+# Baseline metric (which used the stale <80% flag) with two-metric pair
+# (in-window + global), neutral coloring, tooltip pointer to Methodology page.
+baseline_split = load_baseline_split()
+in_window_pct = baseline_split["aggregate"]["in_window_baseline_pct"]
+global_pct    = baseline_split["sanity"]["global_baseline_pct"]
+mc1, mc2, mc3, mc4, mc5 = st.columns(5)
 rhat = conv["convergence"]["rhat_max"]
 ess  = conv["convergence"]["ess_min"]
 mc1.metric("R-hat (max)", f"{rhat:.3f}", delta="PASS" if rhat < 1.1 else "FAIL",
            delta_color="normal" if rhat < 1.1 else "inverse")
 mc2.metric("ESS (min)", f"{int(ess)}", delta="PASS" if ess > 400 else "FAIL",
            delta_color="normal" if ess > 400 else "inverse")
-mc3.metric("Baseline", f"{baseline['baseline_pct']:.1f}%",
-           delta="PASS" if baseline["baseline_pct"] < 80 else "HIGH",
-           delta_color="normal" if baseline["baseline_pct"] < 80 else "inverse")
-mc4.metric("Channels modeled", str(conv["n_channels"]))
+mc3.metric(
+    "Baseline (in-window)",
+    f"{in_window_pct:.1f}%",
+    delta="reported (D029)",
+    delta_color="off",
+    help=(
+        "Mean baseline % across the 12 W-MON weeks that overlap any of the 7 "
+        "lift-test windows. D029 (2026-05-20) deprecated D021's <20% threshold "
+        "gate — see Methodology page for the full decomposition and the "
+        "view-through mechanism for Meta Web."
+    ),
+)
+mc4.metric(
+    "Baseline (global)",
+    f"{global_pct:.1f}%",
+    delta="reported (D029)",
+    delta_color="off",
+    help=(
+        "Global baseline % across all 93 weeks. Decomposes empirically into "
+        "~35% irreducible organic LTV (Abheek/Northbeam per Mtg 6 fact #13) + "
+        "~32pp missed paid attribution (largely Meta Web view-through). "
+        "Apples-to-apples on the attributed-revenue universe ≈ 45–57% band. "
+        "See Methodology page (D029)."
+    ),
+)
+mc5.metric("Channels modeled", str(conv["n_channels"]))
 
 st.markdown("---")
 
