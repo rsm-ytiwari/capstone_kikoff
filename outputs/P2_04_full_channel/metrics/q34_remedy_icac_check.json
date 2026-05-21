@@ -1,0 +1,252 @@
+{
+  "script": "13b_q34_remedy_icac_check",
+  "canonical_version": "M3.5b_fix_a_2026-05-19_q34_remedy_D_gamma_icac_check",
+  "icac_delta_threshold": 30.0,
+  "avg_ltv_train": 206.929908730618,
+  "per_lift_test_M1": {
+    "meta_ios_may25": {
+      "channel": "meta_ios",
+      "n_weeks": 2,
+      "windowed_spend": 260117.57,
+      "windowed_contribution": 1991.8472,
+      "implied_conversions": null,
+      "windowed_icac": 130.59
+    },
+    "meta_android_may25": {
+      "channel": "meta_android",
+      "n_weeks": 2,
+      "windowed_spend": 201110.35,
+      "windowed_contribution": 2397.3615,
+      "implied_conversions": null,
+      "windowed_icac": 83.89
+    },
+    "meta_web_may25": {
+      "channel": "meta_web",
+      "n_weeks": 2,
+      "windowed_spend": 508037.79,
+      "windowed_contribution": 2051.0219,
+      "implied_conversions": null,
+      "windowed_icac": 247.7
+    },
+    "tiktok_ios_aug25": {
+      "channel": "tiktok_ios",
+      "n_weeks": 4,
+      "windowed_spend": 186870.94,
+      "windowed_contribution": 669.4671,
+      "implied_conversions": null,
+      "windowed_icac": 279.13
+    },
+    "tiktok_android_aug25": {
+      "channel": "tiktok_android",
+      "n_weeks": 4,
+      "windowed_spend": 83645.26,
+      "windowed_contribution": 763.7586,
+      "implied_conversions": null,
+      "windowed_icac": 109.52
+    },
+    "tiktok_web_aug25": {
+      "channel": "tiktok_web",
+      "n_weeks": 4,
+      "windowed_spend": 867688.7,
+      "windowed_contribution": 7441.8753,
+      "implied_conversions": null,
+      "windowed_icac": 116.6
+    },
+    "ctv_oct25": {
+      "channel": "ctv",
+      "n_weeks": 4,
+      "windowed_spend": 248252.22,
+      "windowed_contribution": 1937.7839,
+      "implied_conversions": null,
+      "windowed_icac": 128.11
+    },
+    "meta_ios_jan26": {
+      "channel": "meta_ios",
+      "n_weeks": 1,
+      "windowed_spend": 16736.42,
+      "windowed_contribution": 136.1992,
+      "implied_conversions": null,
+      "windowed_icac": 122.88
+    },
+    "meta_android_jan26": {
+      "channel": "meta_android",
+      "n_weeks": 1,
+      "windowed_spend": 71982.34,
+      "windowed_contribution": 779.2519,
+      "implied_conversions": null,
+      "windowed_icac": 92.37
+    },
+    "meta_web_jan26": {
+      "channel": "meta_web",
+      "n_weeks": 1,
+      "windowed_spend": 395312.65,
+      "windowed_contribution": 1559.006,
+      "implied_conversions": null,
+      "windowed_icac": 253.57
+    }
+  },
+  "per_lift_test_M2": {
+    "meta_ios_may25": {
+      "channel": "meta_ios",
+      "n_weeks": 2,
+      "windowed_spend": 260117.57,
+      "windowed_contribution": 414325.3323,
+      "implied_conversions": 2002.2496,
+      "windowed_icac": 129.91
+    },
+    "meta_android_may25": {
+      "channel": "meta_android",
+      "n_weeks": 2,
+      "windowed_spend": 201110.35,
+      "windowed_contribution": 508477.5184,
+      "implied_conversions": 2457.2452,
+      "windowed_icac": 81.84
+    },
+    "meta_web_may25": {
+      "channel": "meta_web",
+      "n_weeks": 2,
+      "windowed_spend": 508037.79,
+      "windowed_contribution": 414328.7662,
+      "implied_conversions": 2002.2662,
+      "windowed_icac": 253.73
+    },
+    "tiktok_ios_aug25": {
+      "channel": "tiktok_ios",
+      "n_weeks": 4,
+      "windowed_spend": 186870.94,
+      "windowed_contribution": 137513.6362,
+      "implied_conversions": 664.5421,
+      "windowed_icac": 281.2
+    },
+    "tiktok_android_aug25": {
+      "channel": "tiktok_android",
+      "n_weeks": 4,
+      "windowed_spend": 83645.26,
+      "windowed_contribution": 158410.4703,
+      "implied_conversions": 765.5272,
+      "windowed_icac": 109.26
+    },
+    "tiktok_web_aug25": {
+      "channel": "tiktok_web",
+      "n_weeks": 4,
+      "windowed_spend": 867688.7,
+      "windowed_contribution": 1517121.0707,
+      "implied_conversions": 7331.5698,
+      "windowed_icac": 118.35
+    },
+    "ctv_oct25": {
+      "channel": "ctv",
+      "n_weeks": 4,
+      "windowed_spend": 248252.22,
+      "windowed_contribution": 401134.2868,
+      "implied_conversions": 1938.5032,
+      "windowed_icac": 128.06
+    },
+    "meta_ios_jan26": {
+      "channel": "meta_ios",
+      "n_weeks": 1,
+      "windowed_spend": 16736.42,
+      "windowed_contribution": 28353.6977,
+      "implied_conversions": 137.0208,
+      "windowed_icac": 122.15
+    },
+    "meta_android_jan26": {
+      "channel": "meta_android",
+      "n_weeks": 1,
+      "windowed_spend": 71982.34,
+      "windowed_contribution": 168375.0978,
+      "implied_conversions": 813.6818,
+      "windowed_icac": 88.46
+    },
+    "meta_web_jan26": {
+      "channel": "meta_web",
+      "n_weeks": 1,
+      "windowed_spend": 395312.65,
+      "windowed_contribution": 313012.5544,
+      "implied_conversions": 1512.6501,
+      "windowed_icac": 261.34
+    }
+  },
+  "per_channel_comparison": {
+    "meta_ios": {
+      "M1_canonical_icac": 137.7,
+      "M1_remedy_icac": 130.59,
+      "M1_delta": -7.109999999999985,
+      "M1_breach": false,
+      "M2_canonical_icac": 137.19,
+      "M2_remedy_icac": 129.91,
+      "M2_delta": -7.280000000000001,
+      "M2_breach": false
+    },
+    "meta_android": {
+      "M1_canonical_icac": 86.29,
+      "M1_remedy_icac": 83.89,
+      "M1_delta": -2.4000000000000057,
+      "M1_breach": false,
+      "M2_canonical_icac": 85.18,
+      "M2_remedy_icac": 81.84,
+      "M2_delta": -3.3400000000000034,
+      "M2_breach": false
+    },
+    "meta_web": {
+      "M1_canonical_icac": 280.6,
+      "M1_remedy_icac": 247.7,
+      "M1_delta": -32.900000000000034,
+      "M1_breach": true,
+      "M2_canonical_icac": 276.45,
+      "M2_remedy_icac": 253.73,
+      "M2_delta": -22.72,
+      "M2_breach": false
+    },
+    "tiktok_ios": {
+      "M1_canonical_icac": 288.98,
+      "M1_remedy_icac": 279.13,
+      "M1_delta": -9.850000000000023,
+      "M1_breach": false,
+      "M2_canonical_icac": 287.93,
+      "M2_remedy_icac": 281.2,
+      "M2_delta": -6.730000000000018,
+      "M2_breach": false
+    },
+    "tiktok_android": {
+      "M1_canonical_icac": 111.38,
+      "M1_remedy_icac": 109.52,
+      "M1_delta": -1.8599999999999994,
+      "M1_breach": false,
+      "M2_canonical_icac": 111.24,
+      "M2_remedy_icac": 109.26,
+      "M2_delta": -1.9799999999999898,
+      "M2_breach": false
+    },
+    "tiktok_web": {
+      "M1_canonical_icac": 137.49,
+      "M1_remedy_icac": 116.6,
+      "M1_delta": -20.890000000000015,
+      "M1_breach": false,
+      "M2_canonical_icac": 134.64,
+      "M2_remedy_icac": 118.35,
+      "M2_delta": -16.289999999999992,
+      "M2_breach": false
+    },
+    "ctv": {
+      "M1_canonical_icac": 140.21,
+      "M1_remedy_icac": 128.11,
+      "M1_delta": -12.099999999999994,
+      "M1_breach": false,
+      "M2_canonical_icac": 138.64,
+      "M2_remedy_icac": 128.06,
+      "M2_delta": -10.579999999999984,
+      "M2_breach": false
+    }
+  },
+  "gate_c_breaches": [
+    {
+      "channel": "meta_web",
+      "model": "M1",
+      "canonical_icac": 280.6,
+      "remedy_icac": 247.7,
+      "delta": -32.900000000000034
+    }
+  ],
+  "gate_c_pass": false
+}

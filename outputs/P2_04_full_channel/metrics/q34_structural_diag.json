@@ -1,0 +1,542 @@
+{
+  "script": "12b_q34_structural_diag",
+  "canonical_version": "M3.5b_fix_a_2026-05-19_q34_structural_diag_v1",
+  "signal_1_baseline_pressure": {
+    "m1_baseline_pct_of_training": 0.6938,
+    "m2_baseline_pct_of_training": 0.6734,
+    "training_mean_conv_per_week": 18462.430379746835,
+    "training_mean_ltv_per_week": 3820429.0334264017,
+    "q1_2026_mean_conv_per_week": 18429.384615384617,
+    "q1_2026_mean_ltv_per_week": 3966232.858466782,
+    "m1_implied_baseline_conv_per_week": 12809.234197468353,
+    "m2_implied_baseline_ltv_per_week": 2572676.911109339,
+    "m1_baseline_over_q1_actual": 0.6950440540904098,
+    "m2_baseline_over_q1_actual": 0.6486449492286878,
+    "industry_typical_band": "0.30\u20130.50 of total y; >0.60 = structurally high"
+  },
+  "signal_2_lift_prior_tension": {
+    "m1": {
+      "meta_ios": {
+        "posterior_icac": 137.7,
+        "benchmark_icac": 135.48,
+        "posterior_over_benchmark": 1.0163861824623561,
+        "tolerance_pct": 50.0,
+        "within_tolerance": true
+      },
+      "meta_android": {
+        "posterior_icac": 86.29,
+        "benchmark_icac": 63.06,
+        "posterior_over_benchmark": 1.3683793212813193,
+        "tolerance_pct": 50.0,
+        "within_tolerance": true
+      },
+      "meta_web": {
+        "posterior_icac": 280.6,
+        "benchmark_icac": 156.89,
+        "posterior_over_benchmark": 1.7885142456498186,
+        "tolerance_pct": 50.0,
+        "within_tolerance": false
+      },
+      "tiktok_ios": {
+        "posterior_icac": 288.98,
+        "benchmark_icac": 108.83,
+        "posterior_over_benchmark": 2.6553340071671414,
+        "tolerance_pct": 50.0,
+        "within_tolerance": false
+      },
+      "tiktok_android": {
+        "posterior_icac": 111.38,
+        "benchmark_icac": 81.68,
+        "posterior_over_benchmark": 1.3636141038197844,
+        "tolerance_pct": 50.0,
+        "within_tolerance": true
+      },
+      "tiktok_web": {
+        "posterior_icac": 137.49,
+        "benchmark_icac": 112.12,
+        "posterior_over_benchmark": 1.226275419193721,
+        "tolerance_pct": 50.0,
+        "within_tolerance": true
+      },
+      "ctv": {
+        "posterior_icac": 140.21,
+        "benchmark_icac": 135.05,
+        "posterior_over_benchmark": 1.0382080710847834,
+        "tolerance_pct": 15.0,
+        "within_tolerance": true
+      }
+    },
+    "m2": {
+      "meta_ios": {
+        "posterior_icac": 137.19,
+        "benchmark_icac": 135.48,
+        "posterior_over_benchmark": 1.012621789193977,
+        "tolerance_pct": 50.0,
+        "within_tolerance": true
+      },
+      "meta_android": {
+        "posterior_icac": 85.18,
+        "benchmark_icac": 63.06,
+        "posterior_over_benchmark": 1.3507770377418333,
+        "tolerance_pct": 50.0,
+        "within_tolerance": true
+      },
+      "meta_web": {
+        "posterior_icac": 276.45,
+        "benchmark_icac": 156.89,
+        "posterior_over_benchmark": 1.7620625916247052,
+        "tolerance_pct": 50.0,
+        "within_tolerance": false
+      },
+      "tiktok_ios": {
+        "posterior_icac": 287.93,
+        "benchmark_icac": 108.83,
+        "posterior_over_benchmark": 2.645685932187816,
+        "tolerance_pct": 50.0,
+        "within_tolerance": false
+      },
+      "tiktok_android": {
+        "posterior_icac": 111.24,
+        "benchmark_icac": 81.68,
+        "posterior_over_benchmark": 1.3619000979431928,
+        "tolerance_pct": 50.0,
+        "within_tolerance": true
+      },
+      "tiktok_web": {
+        "posterior_icac": 134.64,
+        "benchmark_icac": 112.12,
+        "posterior_over_benchmark": 1.2008562254727075,
+        "tolerance_pct": 50.0,
+        "within_tolerance": true
+      },
+      "ctv": {
+        "posterior_icac": 138.64,
+        "benchmark_icac": 135.05,
+        "posterior_over_benchmark": 1.026582747130692,
+        "tolerance_pct": 15.0,
+        "within_tolerance": true
+      }
+    }
+  },
+  "signal_3_spend_regime": {
+    "per_channel": {
+      "apple_search": {
+        "q4_2025_mean_weekly_spend": 56487.19117692307,
+        "q1_2026_mean_weekly_spend": 59109.47707692309,
+        "ratio_q1_over_q4": 1.0464226640653238
+      },
+      "applovin_android": {
+        "q4_2025_mean_weekly_spend": 37826.50861638462,
+        "q1_2026_mean_weekly_spend": 58204.912018461546,
+        "ratio_q1_over_q4": 1.5387333948460151
+      },
+      "applovin_ios": {
+        "q4_2025_mean_weekly_spend": 35405.60694792307,
+        "q1_2026_mean_weekly_spend": 57286.15843315384,
+        "ratio_q1_over_q4": 1.6179967912261508
+      },
+      "ctv": {
+        "q4_2025_mean_weekly_spend": 71674.5400756923,
+        "q1_2026_mean_weekly_spend": 80505.20199315385,
+        "ratio_q1_over_q4": 1.123205002894136
+      },
+      "dsp": {
+        "q4_2025_mean_weekly_spend": 14989.133257815385,
+        "q1_2026_mean_weekly_spend": 33556.193920838465,
+        "ratio_q1_over_q4": 2.2387014208004423
+      },
+      "google_android": {
+        "q4_2025_mean_weekly_spend": 163786.89359784618,
+        "q1_2026_mean_weekly_spend": 124737.68353630771,
+        "ratio_q1_over_q4": 0.7615852575028508
+      },
+      "google_ios": {
+        "q4_2025_mean_weekly_spend": 19826.98745330769,
+        "q1_2026_mean_weekly_spend": 17439.320646615382,
+        "ratio_q1_over_q4": 0.8795749070646646
+      },
+      "google_web": {
+        "q4_2025_mean_weekly_spend": 72695.36948446154,
+        "q1_2026_mean_weekly_spend": 80836.74553753847,
+        "ratio_q1_over_q4": 1.1119930486744019
+      },
+      "influencer": {
+        "q4_2025_mean_weekly_spend": 4223.076923153847,
+        "q1_2026_mean_weekly_spend": 6936.263735153845,
+        "ratio_q1_over_q4": 1.642466822501958
+      },
+      "liftoff": {
+        "q4_2025_mean_weekly_spend": 20657.052733307697,
+        "q1_2026_mean_weekly_spend": 5781.325290230769,
+        "ratio_q1_over_q4": 0.27987173992681375
+      },
+      "linear_tv": {
+        "q4_2025_mean_weekly_spend": 94426.89230769231,
+        "q1_2026_mean_weekly_spend": 111834.43461538464,
+        "ratio_q1_over_q4": 1.1843494144757982
+      },
+      "meta_android": {
+        "q4_2025_mean_weekly_spend": 80095.70846153845,
+        "q1_2026_mean_weekly_spend": 98356.30999999998,
+        "ratio_q1_over_q4": 1.2279847683378715
+      },
+      "meta_ios": {
+        "q4_2025_mean_weekly_spend": 21339.274615384616,
+        "q1_2026_mean_weekly_spend": 23093.35153846154,
+        "ratio_q1_over_q4": 1.0821994634162642
+      },
+      "meta_web": {
+        "q4_2025_mean_weekly_spend": 462275.4015384617,
+        "q1_2026_mean_weekly_spend": 505735.9076923076,
+        "ratio_q1_over_q4": 1.094014317026622
+      },
+      "others": {
+        "q4_2025_mean_weekly_spend": 0.0,
+        "q1_2026_mean_weekly_spend": 0.0,
+        "ratio_q1_over_q4": null
+      },
+      "podcast": {
+        "q4_2025_mean_weekly_spend": 31190.61692307693,
+        "q1_2026_mean_weekly_spend": 25794.241538461538,
+        "ratio_q1_over_q4": 0.8269872186906702
+      },
+      "tiktok_android": {
+        "q4_2025_mean_weekly_spend": 35052.12461538462,
+        "q1_2026_mean_weekly_spend": 34182.382307692314,
+        "ratio_q1_over_q4": 0.9751871728964877
+      },
+      "tiktok_ios": {
+        "q4_2025_mean_weekly_spend": 90323.54615384617,
+        "q1_2026_mean_weekly_spend": 181257.96615384615,
+        "ratio_q1_over_q4": 2.00676317385849
+      },
+      "tiktok_web": {
+        "q4_2025_mean_weekly_spend": 246414.2923076923,
+        "q1_2026_mean_weekly_spend": 276515.49923076923,
+        "ratio_q1_over_q4": 1.122156903486305
+      }
+    },
+    "total_q4_2025_mean_weekly_spend": 1558690.2171898924,
+    "total_q1_2026_mean_weekly_spend": 1781163.3752653,
+    "total_ratio_q1_over_q4": 1.1427308361994448,
+    "channels_with_big_q1_drops": [
+      [
+        "liftoff",
+        0.27987173992681375
+      ],
+      [
+        "google_android",
+        0.7615852575028508
+      ]
+    ]
+  },
+  "signal_4_m2_posterior": {
+    "intercept": {
+      "mean": 0.4949567373402485,
+      "hdi_5_5": 0.45397578700831737,
+      "hdi_94_5": 0.5369856579690669
+    },
+    "adstock_alpha": {
+      "apple_search": {
+        "mean": 0.24060401527679148,
+        "hdi_5_5": 0.0009481400180093736,
+        "hdi_94_5": 0.5110721050894257
+      },
+      "applovin_android": {
+        "mean": 0.25057849302193147,
+        "hdi_5_5": 0.0004947290833977663,
+        "hdi_94_5": 0.5203289939533529
+      },
+      "applovin_ios": {
+        "mean": 0.24650645061051646,
+        "hdi_5_5": 1.046484892744292e-05,
+        "hdi_94_5": 0.5176319865958836
+      },
+      "ctv": {
+        "mean": 0.2161900316453796,
+        "hdi_5_5": 2.168923150057242e-05,
+        "hdi_94_5": 0.45346394260052536
+      },
+      "dsp": {
+        "mean": 0.23968594083254732,
+        "hdi_5_5": 0.00026362508685261725,
+        "hdi_94_5": 0.4991001557932546
+      },
+      "google_android": {
+        "mean": 0.23915404638774426,
+        "hdi_5_5": 9.213914651260266e-05,
+        "hdi_94_5": 0.492642376313527
+      },
+      "google_ios": {
+        "mean": 0.24723696552570734,
+        "hdi_5_5": 6.29421514359002e-05,
+        "hdi_94_5": 0.5213064538057175
+      },
+      "google_web": {
+        "mean": 0.2349207434418455,
+        "hdi_5_5": 1.5161378798014051e-05,
+        "hdi_94_5": 0.5032809677645125
+      },
+      "influencer": {
+        "mean": 0.2559393445199695,
+        "hdi_5_5": 0.00025455144399506857,
+        "hdi_94_5": 0.5246740833211434
+      },
+      "liftoff": {
+        "mean": 0.24360461695559474,
+        "hdi_5_5": 5.6534367084534717e-05,
+        "hdi_94_5": 0.5014037396476695
+      },
+      "linear_tv": {
+        "mean": 0.23496462508867938,
+        "hdi_5_5": 0.00012310914636725918,
+        "hdi_94_5": 0.49605151655701213
+      },
+      "meta_android": {
+        "mean": 0.2568780769279321,
+        "hdi_5_5": 9.89668491699704e-06,
+        "hdi_94_5": 0.5162292124716128
+      },
+      "meta_ios": {
+        "mean": 0.18351348293796957,
+        "hdi_5_5": 2.5245834543642965e-05,
+        "hdi_94_5": 0.3817386573761943
+      },
+      "meta_web": {
+        "mean": 0.18805720036414164,
+        "hdi_5_5": 2.509701425654103e-05,
+        "hdi_94_5": 0.39152678389145734
+      },
+      "others": {
+        "mean": 0.2699375232302956,
+        "hdi_5_5": 0.0001570773807262722,
+        "hdi_94_5": 0.5441102214680703
+      },
+      "podcast": {
+        "mean": 0.23866362249345957,
+        "hdi_5_5": 4.735066127241341e-05,
+        "hdi_94_5": 0.5129085982271643
+      },
+      "tiktok_android": {
+        "mean": 0.22909425336522965,
+        "hdi_5_5": 6.175499320755024e-05,
+        "hdi_94_5": 0.4921343766040181
+      },
+      "tiktok_ios": {
+        "mean": 0.23434124890354904,
+        "hdi_5_5": 4.87835530478488e-05,
+        "hdi_94_5": 0.5117251106996976
+      },
+      "tiktok_web": {
+        "mean": 0.1749478465499379,
+        "hdi_5_5": 8.075617540331561e-07,
+        "hdi_94_5": 0.38842799203440553
+      }
+    },
+    "saturation_lam": {
+      "apple_search": {
+        "mean": 0.5256020755801133,
+        "hdi_5_5": 0.0021930790993490976,
+        "hdi_94_5": 1.1628905546926
+      },
+      "applovin_android": {
+        "mean": 0.5304564909725855,
+        "hdi_5_5": 0.004491481069472631,
+        "hdi_94_5": 1.1580301255734293
+      },
+      "applovin_ios": {
+        "mean": 0.5352148453356776,
+        "hdi_5_5": 0.004640182483389802,
+        "hdi_94_5": 1.15514018807551
+      },
+      "ctv": {
+        "mean": 0.5882377128009479,
+        "hdi_5_5": 0.01204983769480147,
+        "hdi_94_5": 1.277348862992274
+      },
+      "dsp": {
+        "mean": 0.5175784281647523,
+        "hdi_5_5": 0.004302991926740067,
+        "hdi_94_5": 1.1295152697759956
+      },
+      "google_android": {
+        "mean": 0.5321420545956337,
+        "hdi_5_5": 0.0022454600427648267,
+        "hdi_94_5": 1.1873286456210312
+      },
+      "google_ios": {
+        "mean": 0.5177438717682898,
+        "hdi_5_5": 0.0043899805703289455,
+        "hdi_94_5": 1.1125722349052238
+      },
+      "google_web": {
+        "mean": 0.5242704809331592,
+        "hdi_5_5": 0.005887668485139591,
+        "hdi_94_5": 1.1272676340387138
+      },
+      "influencer": {
+        "mean": 0.549135878653446,
+        "hdi_5_5": 0.006577939971598004,
+        "hdi_94_5": 1.1542045199467432
+      },
+      "liftoff": {
+        "mean": 0.5376952316532015,
+        "hdi_5_5": 0.000504528989025814,
+        "hdi_94_5": 1.1839495558179374
+      },
+      "linear_tv": {
+        "mean": 0.5515490467962394,
+        "hdi_5_5": 0.006393990924960193,
+        "hdi_94_5": 1.183292289113397
+      },
+      "meta_android": {
+        "mean": 0.571655298131862,
+        "hdi_5_5": 0.038599252148867606,
+        "hdi_94_5": 1.1585527777210105
+      },
+      "meta_ios": {
+        "mean": 0.4207537816364238,
+        "hdi_5_5": 0.028327075624304917,
+        "hdi_94_5": 0.8685518638570084
+      },
+      "meta_web": {
+        "mean": 0.7906316711927609,
+        "hdi_5_5": 0.042712545952389144,
+        "hdi_94_5": 1.6690735562616654
+      },
+      "others": {
+        "mean": 0.8019266763671532,
+        "hdi_5_5": 0.0714931555468932,
+        "hdi_94_5": 1.5526996994685274
+      },
+      "podcast": {
+        "mean": 0.5510696478878602,
+        "hdi_5_5": 0.011133106742507877,
+        "hdi_94_5": 1.1703149682065785
+      },
+      "tiktok_android": {
+        "mean": 0.5200327720779491,
+        "hdi_5_5": 0.007521765841476831,
+        "hdi_94_5": 1.1297459628858804
+      },
+      "tiktok_ios": {
+        "mean": 0.5833010039279971,
+        "hdi_5_5": 0.021929920913041044,
+        "hdi_94_5": 1.239911981729006
+      },
+      "tiktok_web": {
+        "mean": 0.7105164191693423,
+        "hdi_5_5": 0.05210635415015331,
+        "hdi_94_5": 1.4441985582980688
+      }
+    },
+    "saturation_beta": {
+      "apple_search": {
+        "mean": 0.16076433113858407,
+        "hdi_5_5": 2.148460930198794e-05,
+        "hdi_94_5": 0.33773510168640525
+      },
+      "applovin_android": {
+        "mean": 0.13993995127362585,
+        "hdi_5_5": 2.0233371539838837e-05,
+        "hdi_94_5": 0.30009038956667006
+      },
+      "applovin_ios": {
+        "mean": 0.1511160252439802,
+        "hdi_5_5": 3.331873786703166e-05,
+        "hdi_94_5": 0.3492803980085204
+      },
+      "ctv": {
+        "mean": 0.2695110794236816,
+        "hdi_5_5": 0.015242379912462365,
+        "hdi_94_5": 0.5863099611737056
+      },
+      "dsp": {
+        "mean": 0.17141429521151877,
+        "hdi_5_5": 4.625471499052753e-06,
+        "hdi_94_5": 0.39454842390450423
+      },
+      "google_android": {
+        "mean": 0.16172851116583162,
+        "hdi_5_5": 8.46778057022283e-07,
+        "hdi_94_5": 0.3519667937331694
+      },
+      "google_ios": {
+        "mean": 0.15284942955337108,
+        "hdi_5_5": 4.656132495924973e-06,
+        "hdi_94_5": 0.32448429926950734
+      },
+      "google_web": {
+        "mean": 0.20191332609312443,
+        "hdi_5_5": 5.805647833758775e-05,
+        "hdi_94_5": 0.45850598836869644
+      },
+      "influencer": {
+        "mean": 0.33393750890966417,
+        "hdi_5_5": 2.868192604035019e-05,
+        "hdi_94_5": 0.7993646958551015
+      },
+      "liftoff": {
+        "mean": 0.23051564741850342,
+        "hdi_5_5": 3.0619114902398075e-05,
+        "hdi_94_5": 0.5257709187830565
+      },
+      "linear_tv": {
+        "mean": 0.1875218365316507,
+        "hdi_5_5": 2.09950817203907e-05,
+        "hdi_94_5": 0.415233249034166
+      },
+      "meta_android": {
+        "mean": 0.5534028217895546,
+        "hdi_5_5": 0.0702376339459051,
+        "hdi_94_5": 1.2008632400122357
+      },
+      "meta_ios": {
+        "mean": 0.439454186556395,
+        "hdi_5_5": 0.042570880257732494,
+        "hdi_94_5": 0.9085651162967873
+      },
+      "meta_web": {
+        "mean": 0.5674716928930411,
+        "hdi_5_5": 0.04403605259999703,
+        "hdi_94_5": 1.2585688418709453
+      },
+      "others": {
+        "mean": 1.0418640233086798,
+        "hdi_5_5": 0.07477373650422352,
+        "hdi_94_5": 2.104564637744224
+      },
+      "podcast": {
+        "mean": 0.3875456358162948,
+        "hdi_5_5": 6.87863179170118e-05,
+        "hdi_94_5": 0.885068775448821
+      },
+      "tiktok_android": {
+        "mean": 0.20161810963821375,
+        "hdi_5_5": 0.01063008294821771,
+        "hdi_94_5": 0.4332728122473492
+      },
+      "tiktok_ios": {
+        "mean": 0.2982955905426762,
+        "hdi_5_5": 0.015133661142365874,
+        "hdi_94_5": 0.667097781614318
+      },
+      "tiktok_web": {
+        "mean": 0.6385185140220249,
+        "hdi_5_5": 0.07088002634236742,
+        "hdi_94_5": 1.346817758612381
+      }
+    }
+  },
+  "flags": {
+    "m1_high_baseline": true,
+    "m2_high_baseline": true,
+    "n_lift_out_of_tol_m1": 2,
+    "n_lift_out_of_tol_m2": 2,
+    "channels_with_big_q1_drops": 2,
+    "channels_with_high_adstock": 0
+  },
+  "candidate_remedy_d_variants": [
+    "D1 \u2014 tighten intercept prior (reduce baseline absorption)"
+  ]
+}

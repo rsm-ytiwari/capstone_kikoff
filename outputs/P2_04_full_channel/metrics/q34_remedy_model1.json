@@ -1,0 +1,141 @@
+{
+  "script": "13_oot_remediation_v1",
+  "canonical_version": "M3.5b_fix_a_2026-05-19_q34_remedy_D_gamma_v1",
+  "model": "Model 1 (y=CONVERSIONS) with trend control 't'",
+  "n_train": 79,
+  "n_test": 13,
+  "train_start": "2024-07-01",
+  "train_end": "2025-12-29",
+  "test_start": "2026-01-05",
+  "test_end": "2026-03-30",
+  "channel_columns": [
+    "apple_search",
+    "applovin_android",
+    "applovin_ios",
+    "ctv",
+    "dsp",
+    "google_android",
+    "google_ios",
+    "google_web",
+    "influencer",
+    "liftoff",
+    "linear_tv",
+    "meta_android",
+    "meta_ios",
+    "meta_web",
+    "others",
+    "podcast",
+    "tiktok_android",
+    "tiktok_ios",
+    "tiktok_web"
+  ],
+  "control_columns": [
+    "t"
+  ],
+  "metrics": {
+    "mape_pct": 16.132,
+    "smape_pct": 16.413,
+    "mae": 2974.648,
+    "rmse": 3366.606,
+    "hdi_89_coverage_pct": 38.5
+  },
+  "signed_mean_pct": -3.655,
+  "n_over_predicted": 4,
+  "convergence": {
+    "rhat_max": 1.0056,
+    "ess_min": 1208.0,
+    "divergences": 0
+  },
+  "lift_tests_applied": [
+    {
+      "label": "meta_ios_may25",
+      "channel": "meta_ios",
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y": 2023.0,
+      "sigma": 202.3,
+      "n_weeks": "auto"
+    },
+    {
+      "label": "meta_android_may25",
+      "channel": "meta_android",
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y": 2459.0,
+      "sigma": 245.9,
+      "n_weeks": "auto"
+    },
+    {
+      "label": "meta_web_may25",
+      "channel": "meta_web",
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y": 1974.0,
+      "sigma": 197.4,
+      "n_weeks": "auto"
+    },
+    {
+      "label": "tiktok_ios_aug25",
+      "channel": "tiktok_ios",
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y": 663.8,
+      "sigma": 66.4,
+      "n_weeks": "auto"
+    },
+    {
+      "label": "tiktok_android_aug25",
+      "channel": "tiktok_android",
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y": 759.5,
+      "sigma": 75.95,
+      "n_weeks": "auto"
+    },
+    {
+      "label": "tiktok_web_aug25",
+      "channel": "tiktok_web",
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y": 7250.8,
+      "sigma": 725.08,
+      "n_weeks": "auto"
+    },
+    {
+      "label": "ctv_oct25",
+      "channel": "ctv",
+      "start": "2025-10-06",
+      "end": "2025-11-01",
+      "delta_y": 1908.0,
+      "sigma": 386.8,
+      "n_weeks": "auto"
+    },
+    {
+      "label": "meta_ios_jan26",
+      "channel": "meta_ios",
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y": 28.0,
+      "sigma": 90.0,
+      "n_weeks": "auto"
+    },
+    {
+      "label": "meta_android_jan26",
+      "channel": "meta_android",
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y": 1022.0,
+      "sigma": 3066.0,
+      "n_weeks": "auto"
+    },
+    {
+      "label": "meta_web_jan26",
+      "channel": "meta_web",
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y": 3142.0,
+      "sigma": 9426.0,
+      "n_weeks": "auto"
+    }
+  ]
+}

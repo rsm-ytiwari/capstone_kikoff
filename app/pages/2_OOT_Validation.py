@@ -1,18 +1,21 @@
 """
-2_OOT_Validation.py — Out-of-Time validation page (M7).
+2_OOT_Validation.py — Out-of-Time validation page (M7 + D028).
 
 Anchor: Abheek 2026-05-12 (37:38): "for MMM, I largely care on the out of
 time validation. Like how closely is it able to predict the conversion
 numbers."
 
-Fits canonical M3.5b Fix-A model on 80 weeks (2024-07-01 → 2025-12-29), holds
-out the last 13 weeks (2026-01-05 → 2026-03-30), and reports MAPE / sMAPE /
-MAE / RMSE + 89% HDI coverage for both Model 1 (CONVERSIONS) and Model 2
-(LTV_3YEAR).
+Asymmetric architecture (D028, 2026-05-20):
+  Model 1 (y=CONVERSIONS) uses D-γ — linear trend control_columns=["t"],
+    default Normal(0, 2) prior. Produced by scripts/11b_oot_validation_M1_D_gamma.py.
+    OOT signed mean: −3.66% (4/13 over-pred).
+  Model 2 (y=LTV_3YEAR) stays at canonical M3.5b Fix-A (2026-05-19). Produced by
+    scripts/11_oot_validation.py. OOT signed mean: +14.96% (12/13 over-pred).
+    Documented limitation per Option α — see footnote below.
 
-Data files (produced by scripts/11_oot_validation.py):
-  outputs/P2_04_full_channel/metrics/oot_model1_conversions.json
-  outputs/P2_04_full_channel/metrics/oot_model2_ltv.json
+Data files:
+  outputs/P2_04_full_channel/metrics/oot_model1_conversions.json   (M1, D028 stamp)
+  outputs/P2_04_full_channel/metrics/oot_model2_ltv.json            (M2, M3.5b Fix-A stamp)
   outputs/P2_04_full_channel/charts/oot_model1_conversions_timeseries.csv
   outputs/P2_04_full_channel/charts/oot_model2_ltv_timeseries.csv
 """
@@ -39,8 +42,10 @@ st.markdown("# Out-of-Time Validation — 13-week Hold-out")
 st.caption(
     "*Abheek 2026-05-12: \"for MMM, I largely care on the out of time validation. "
     "Like how closely is it able to predict the conversion numbers.\"* "
-    f"Canonical: `{CANONICAL_VERSION}` (Lever C lam Gamma(2,2) + HalfNormal(2) β, "
-    "GeometricAdstock l_max=8, Fix-A windowed lift priors)."
+    f"Base canonical: `{CANONICAL_VERSION}` (Lever C lam Gamma(2,2) + HalfNormal(2) β, "
+    "GeometricAdstock l_max=8, Fix-A windowed lift priors). "
+    "**D028 (2026-05-20):** Model 1 OOT uses asymmetric D-γ linear trend control (`control_columns=['t']`); "
+    "Model 2 OOT stays at base canonical. Per-model stamps in the Configuration & methodology footnote."
 )
 
 # ── Load both models ─────────────────────────────────────────────────────────
@@ -110,10 +115,10 @@ st.markdown(
 )
 
 # ── Model 1 chart ────────────────────────────────────────────────────────────
-st.markdown("### Model 1 — Weekly conversions (predicted vs actual)")
+st.markdown("### Model 1 — Weekly conversions (predicted vs actual) · D-γ trend control (D028)")
 fig_m1 = fig_oot_predicted_vs_actual(
     m1_ts,
-    title=("Model 1 · y = CONVERSIONS<br>"
+    title=("Model 1 · y = CONVERSIONS · D-γ trend control (D028)<br>"
            "<sub>Posterior mean + 89% HDI vs actual, 13-week hold-out</sub>"),
     y_label="Weekly conversions",
     dollar_axis=False,
@@ -121,15 +126,25 @@ fig_m1 = fig_oot_predicted_vs_actual(
 st.plotly_chart(fig_m1, use_container_width=True, config=CONFIG)
 
 # ── Model 2 chart ────────────────────────────────────────────────────────────
-st.markdown("### Model 2 — Weekly LTV_3YEAR (predicted vs actual)")
+st.markdown("### Model 2 — Weekly LTV_3YEAR (predicted vs actual) · base canonical")
 fig_m2 = fig_oot_predicted_vs_actual(
     m2_ts,
-    title=("Model 2 · y = LTV_3YEAR<br>"
+    title=("Model 2 · y = LTV_3YEAR · M3.5b Fix-A base canonical<br>"
            "<sub>Posterior mean + 89% HDI vs actual, 13-week hold-out (dollars)</sub>"),
     y_label="Weekly LTV_3YEAR ($)",
     dollar_axis=True,
 )
 st.plotly_chart(fig_m2, use_container_width=True, config=CONFIG)
+
+st.info(
+    "**Model 2 documented limitation (D028 Option α, 2026-05-20):** Model 2 systematically "
+    "over-predicts weekly LTV in all 13 hold-out weeks by ~5–25%/week (signed mean +14.96%). "
+    "Two architectural remedies tested under Q34 — D-γ trend control (over-corrected M2 to −14%) "
+    "and D-ε (asymmetric per-window lift priors + post-multiply; pushed M2 further over). "
+    "Both ruled out as cleanly improving M2 without trade-off. M2 OOT MAPE 15.13% remains inside "
+    "the industry-acceptable 15–25% MMM band; Model 2 is published with this documented bias rather "
+    "than an architectural fix that trades systematic over-prediction for week-to-week noise."
+)
 
 
 # ── Per-week error tables (collapsible) ──────────────────────────────────────
@@ -174,8 +189,21 @@ with st.expander("Per-week error tables + CSV downloads", expanded=False):
 
 # ── Configuration footnote ───────────────────────────────────────────────────
 with st.expander("Configuration & methodology", expanded=False):
+    m1_canon_stamp = m1_metrics.get("canonical_version", CANONICAL_VERSION)
+    m2_canon_stamp = m2_metrics.get("canonical_version", CANONICAL_VERSION)
     st.markdown(f"""
-**Canonical version:** `{CANONICAL_VERSION}` (M3.5b Fix-A, post-D027).
+**Base canonical:** `{CANONICAL_VERSION}` (M3.5b Fix-A, post-D027). Lever C lam
+Gamma(2,2) + HalfNormal(2) β, GeometricAdstock l_max=8.
+
+**Asymmetric OOT architecture (D028, 2026-05-20):**
+- **Model 1 OOT stamp:** `{m1_canon_stamp}` — D-γ trend control `control_columns=["t"]`
+  with default `Normal(0, 2)` prior on gamma_control. Produced by
+  `scripts/11b_oot_validation_M1_D_gamma.py`. Accepted-cost: M1 meta_web windowed
+  iCAC drifts $32.90 internally — NOT surfaced on Decisioning Summary or main
+  dashboard (those read Model 2 only).
+- **Model 2 OOT stamp:** `{m2_canon_stamp}` — base canonical, no trend control.
+  Produced by `scripts/11_oot_validation.py`. +14.96% one-directional OOT
+  over-prediction accepted as documented limitation per Option α.
 
 **Model 1 convergence:** R-hat={m1_metrics['convergence']['rhat_max']},
 ESS={m1_metrics['convergence']['ess_min']:.0f},

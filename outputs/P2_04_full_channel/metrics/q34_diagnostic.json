@@ -1,0 +1,88 @@
+{
+  "script": "12_q34_diagnostic",
+  "canonical_version": "M3.5b_fix_a_2026-05-19_q34_diag_v1",
+  "verdict": "structural_bias",
+  "recommendation": "Surface as decision point \u2014 Remedies A/B/C may not fix this",
+  "reason": "In-sample residuals are ALSO systematically positive. Over-prediction is not a regime-shift problem \u2014 it's a model misspecification problem. Need to investigate saturation curve shape, lift-prior pressure, or baseline allocation before choosing a remedy. None of A/B/C directly address this.",
+  "check_1_yoy": {
+    "window_2025": {
+      "start": "2025-01-06",
+      "end": "2025-03-31",
+      "n_weeks": 13,
+      "conv_sum": 248203.0,
+      "ltv_sum": 52956130.25366746,
+      "conv_per_week": 19092.53846153846,
+      "ltv_per_week": 4073548.481051343
+    },
+    "window_2026": {
+      "start": "2026-01-05",
+      "end": "2026-03-30",
+      "n_weeks": 13,
+      "conv_sum": 239582.0,
+      "ltv_sum": 51561027.16006817,
+      "conv_per_week": 18429.384615384617,
+      "ltv_per_week": 3966232.858466782
+    },
+    "ratio_2026_over_2025": {
+      "conv": 0.9652663344117517,
+      "ltv": 0.9736554939547784
+    },
+    "interpretation": "If 2026/2025 < 0.90 \u2192 real YoY level shift (model would over-shoot on this alone). If 0.95\u20131.05 \u2192 no YoY drop; over-prediction comes from elsewhere (likely training-tail anomaly)."
+  },
+  "check_2_training_tail": {
+    "tail_window": {
+      "start": "2025-11-03",
+      "end": "2025-12-29",
+      "n_weeks": 9,
+      "conv_mean_per_week": 17872.777777777777,
+      "ltv_mean_per_week": 3777797.28834437
+    },
+    "rest_window": {
+      "start": "2024-07-01",
+      "end": "2025-11-02",
+      "n_weeks": 70,
+      "conv_mean_per_week": 18538.242857142857,
+      "ltv_mean_per_week": 3825910.2577940905
+    },
+    "ratio_tail_over_rest": {
+      "conv": 0.9641031199939927,
+      "ltv": 0.9874244385759688
+    },
+    "interpretation": "If ratio > 1.15 \u2192 Q4 2025 is elevated; model anchored on recent peak \u2192 over-shoots 2026. If 0.95\u20131.10 \u2192 no training-tail anomaly; over-prediction is structural (saturation/trend)."
+  },
+  "check_3_residuals": {
+    "m1": {
+      "in_sample": {
+        "n_weeks": 79,
+        "mape_pct": 17.441,
+        "signed_mean_pct": 5.341,
+        "n_over_predicted": 42,
+        "frac_over_predicted": 0.532
+      },
+      "oot": {
+        "n_weeks": 13,
+        "mape_pct": 18.829,
+        "signed_mean_pct": 18.829,
+        "n_over_predicted": 13,
+        "frac_over_predicted": 1.0
+      }
+    },
+    "m2": {
+      "in_sample": {
+        "n_weeks": 79,
+        "mape_pct": 18.848,
+        "signed_mean_pct": 6.034,
+        "n_over_predicted": 38,
+        "frac_over_predicted": 0.481
+      },
+      "oot": {
+        "n_weeks": 13,
+        "mape_pct": 15.129,
+        "signed_mean_pct": 14.958,
+        "n_over_predicted": 12,
+        "frac_over_predicted": 0.923
+      }
+    },
+    "interpretation": "If in-sample signed_mean ~0% AND OOT signed_mean > +10% \u2192 regime-shift (NOT a fit problem). The model fits training fine but the world changed in 2026. If in-sample signed_mean is ALSO systematically positive (>+5%) \u2192 the model is biased even within training; different root cause (model misspecification, not regime shift)."
+  }
+}

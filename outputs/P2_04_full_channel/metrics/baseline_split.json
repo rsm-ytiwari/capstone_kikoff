@@ -1,0 +1,197 @@
+{
+  "script": "scripts/15_baseline_split.py",
+  "stamp": "M3.5b_fix_a_2026-05-20_baseline_split_v1",
+  "trace": "outputs/P2_04_full_channel/traces/ltv_trace_window_scaled.nc",
+  "n_weeks_total": 93,
+  "n_weeks_in_window_union": 12,
+  "n_weeks_out_of_window": 81,
+  "in_window_week_indices": [
+    44,
+    45,
+    59,
+    60,
+    61,
+    62,
+    66,
+    67,
+    68,
+    69,
+    78,
+    79
+  ],
+  "in_window_week_dates": [
+    "2025-05-05",
+    "2025-05-12",
+    "2025-08-18",
+    "2025-08-25",
+    "2025-09-01",
+    "2025-09-08",
+    "2025-10-06",
+    "2025-10-13",
+    "2025-10-20",
+    "2025-10-27",
+    "2025-12-29",
+    "2026-01-05"
+  ],
+  "lift_tests": [
+    {
+      "label": "meta_ios_may25",
+      "channel": "meta_ios",
+      "start": "2025-05-06",
+      "end": "2025-05-13"
+    },
+    {
+      "label": "meta_android_may25",
+      "channel": "meta_android",
+      "start": "2025-05-06",
+      "end": "2025-05-13"
+    },
+    {
+      "label": "meta_web_may25",
+      "channel": "meta_web",
+      "start": "2025-05-06",
+      "end": "2025-05-13"
+    },
+    {
+      "label": "tiktok_ios_aug25",
+      "channel": "tiktok_ios",
+      "start": "2025-08-22",
+      "end": "2025-09-14"
+    },
+    {
+      "label": "tiktok_android_aug25",
+      "channel": "tiktok_android",
+      "start": "2025-08-22",
+      "end": "2025-09-14"
+    },
+    {
+      "label": "tiktok_web_aug25",
+      "channel": "tiktok_web",
+      "start": "2025-08-22",
+      "end": "2025-09-14"
+    },
+    {
+      "label": "ctv_oct25",
+      "channel": "ctv",
+      "start": "2025-10-06",
+      "end": "2025-11-01"
+    },
+    {
+      "label": "meta_ios_jan26",
+      "channel": "meta_ios",
+      "start": "2026-01-03",
+      "end": "2026-01-07"
+    },
+    {
+      "label": "meta_android_jan26",
+      "channel": "meta_android",
+      "start": "2026-01-03",
+      "end": "2026-01-07"
+    },
+    {
+      "label": "meta_web_jan26",
+      "channel": "meta_web",
+      "start": "2026-01-03",
+      "end": "2026-01-07"
+    }
+  ],
+  "sanity": {
+    "y_pred_total_$": 353937335.8325477,
+    "channel_contrib_total_$": 115648341.030143,
+    "baseline_total_$": 238288994.80240467,
+    "global_baseline_pct": 67.33,
+    "negative_baseline_weeks": 0
+  },
+  "aggregate": {
+    "in_window_baseline_pct": 61.32,
+    "out_window_baseline_pct": 68.32,
+    "in_window_y_pred_$": 50145560.62,
+    "out_window_y_pred_$": 303791775.21,
+    "in_window_baseline_$": 30746967.07,
+    "out_window_baseline_$": 207542027.73
+  },
+  "per_channel": {
+    "ctv": {
+      "own_window_weeks": 4,
+      "in_window_contribution_$": 372669.81,
+      "out_window_contribution_$": 7438912.96,
+      "total_contribution_$": 7811582.77,
+      "in_window_share_of_own_total": 0.0477,
+      "in_window_$_per_week": 93167.45,
+      "out_window_$_per_week": 83583.29,
+      "concentration_ratio_in_over_out": 1.11
+    },
+    "meta_android": {
+      "own_window_weeks": 4,
+      "in_window_contribution_$": 813933.2,
+      "out_window_contribution_$": 11616939.59,
+      "total_contribution_$": 12430872.79,
+      "in_window_share_of_own_total": 0.0655,
+      "in_window_$_per_week": 203483.3,
+      "out_window_$_per_week": 130527.41,
+      "concentration_ratio_in_over_out": 1.56
+    },
+    "meta_ios": {
+      "own_window_weeks": 4,
+      "in_window_contribution_$": 445728.79,
+      "out_window_contribution_$": 4217307.53,
+      "total_contribution_$": 4663036.32,
+      "in_window_share_of_own_total": 0.0956,
+      "in_window_$_per_week": 111432.2,
+      "out_window_$_per_week": 47385.48,
+      "concentration_ratio_in_over_out": 2.35
+    },
+    "meta_web": {
+      "own_window_weeks": 4,
+      "in_window_contribution_$": 956601.65,
+      "out_window_contribution_$": 20390210.06,
+      "total_contribution_$": 21346811.71,
+      "in_window_share_of_own_total": 0.0448,
+      "in_window_$_per_week": 239150.41,
+      "out_window_$_per_week": 229103.48,
+      "concentration_ratio_in_over_out": 1.04
+    },
+    "tiktok_android": {
+      "own_window_weeks": 4,
+      "in_window_contribution_$": 156485.93,
+      "out_window_contribution_$": 3610232.76,
+      "total_contribution_$": 3766718.69,
+      "in_window_share_of_own_total": 0.0415,
+      "in_window_$_per_week": 39121.48,
+      "out_window_$_per_week": 40564.41,
+      "concentration_ratio_in_over_out": 0.96
+    },
+    "tiktok_ios": {
+      "own_window_weeks": 4,
+      "in_window_contribution_$": 135073.85,
+      "out_window_contribution_$": 3813003.63,
+      "total_contribution_$": 3948077.48,
+      "in_window_share_of_own_total": 0.0342,
+      "in_window_$_per_week": 33768.46,
+      "out_window_$_per_week": 42842.74,
+      "concentration_ratio_in_over_out": 0.79
+    },
+    "tiktok_web": {
+      "own_window_weeks": 4,
+      "in_window_contribution_$": 1341265.13,
+      "out_window_contribution_$": 18575665.52,
+      "total_contribution_$": 19916930.65,
+      "in_window_share_of_own_total": 0.0673,
+      "in_window_$_per_week": 335316.28,
+      "out_window_$_per_week": 208715.34,
+      "concentration_ratio_in_over_out": 1.61
+    }
+  },
+  "reference": {
+    "abheek_implied_organic_baseline_pct": 35.0,
+    "source": "Meeting 6 fact #13 \u2014 Northbeam's initial run used attributed-revenue only (~65% of total LTV, since ~35% is organic / unattributed). Abheek's <20% baseline target (D021, Mtg 6 fact #10) was framed on this attributed universe.",
+    "global_baseline_pct_our_model": 67.33,
+    "missed_paid_attribution_pct_estimate": 32.33,
+    "baseline_pct_on_attributed_universe_apples_to_apples": 49.74,
+    "d021_target_pct_on_attributed_universe": 20.0,
+    "gap_to_d021_target_pp": 29.74,
+    "mechanistic_attribution_to_meta_web": "Meeting 6 fact #13: large portion of view-through attribution flows from Meta Web (scale-up \u2192 blended grows without attributed spike). Empirically consistent with our meta_web in/out concentration ratio 1.04x \u2014 the lift-prior is shifting Meta Web's level but not redistributing attribution into the test window, because Meta Web's true mechanism is view-through credit our X doesn't carry.",
+    "data_scope_limitation": "data/MMM_UPDATED_LTV.csv columns = [DS, CONVERSIONS, LTV_1YEAR, LTV_3YEAR] \u2014 no organic/paid attribution flag. data/MMM_Updated_Spend.csv = paid spend only. The model cannot disentangle organic from missed paid attribution without an attributed-revenue feed (e.g., Northbeam attributed-revenue CSV) from Kikoff. Discussable extension for Abheek; not solvable in-session."
+  },
+  "dp_c_recommendation": "DP-C Option \u03b4: X = max(in-window * 1.1, 30%) = 67.45% with structural-floor disclosure"
+}

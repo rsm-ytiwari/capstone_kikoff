@@ -1,0 +1,400 @@
+{
+  "script": "13c_q34_gamma_sweep",
+  "canonical_version": "M3.5b_fix_a_2026-05-19_q34_gamma_sweep_v1",
+  "icac_delta_threshold": 30.0,
+  "n_train": 79,
+  "n_test": 13,
+  "avg_ltv_train": 206.929908730618,
+  "baseline_m7": {
+    "M1_MAPE": 18.83,
+    "M1_HDI89_cov": 7.7,
+    "M2_MAPE": 15.13,
+    "M2_HDI89_cov": 7.7,
+    "M1_over_pred": "13/13",
+    "M2_over_pred": "12/13",
+    "M1_signed_mean": "+18.83",
+    "M2_signed_mean": "+14.96"
+  },
+  "configs": [
+    {
+      "config_name": "default",
+      "gamma_prior_repr": "Prior(\"Normal\", mu=0.0, sigma=2.0, dims=\"control\")",
+      "M1": {
+        "metrics": {
+          "mape_pct": 16.132,
+          "smape_pct": 16.413,
+          "mae": 2974.648,
+          "rmse": 3366.606,
+          "hdi_89_coverage_pct": 38.5
+        },
+        "signed_mean_pct": -3.655,
+        "n_over_predicted": 4,
+        "convergence": {
+          "rhat_max": 1.0056,
+          "ess_min": 1208.0,
+          "divergences": 0
+        },
+        "icac_by_channel": {
+          "meta_ios": 130.59,
+          "meta_android": 83.89,
+          "meta_web": 247.7,
+          "tiktok_ios": 279.13,
+          "tiktok_android": 109.52,
+          "tiktok_web": 116.6,
+          "ctv": 128.11
+        },
+        "gamma_control_mean": -0.014123,
+        "gamma_control_hdi89": [
+          [
+            -0.01787175848181134,
+            -0.010429728842528784
+          ]
+        ],
+        "icac_deltas_vs_canonical": {
+          "meta_ios": -7.11,
+          "meta_android": -2.4,
+          "meta_web": -32.9,
+          "tiktok_ios": -9.85,
+          "tiktok_android": -1.86,
+          "tiktok_web": -20.89,
+          "ctv": -12.1
+        },
+        "icac_max_abs_movement": 32.9,
+        "icac_breaches_30": [
+          {
+            "channel": "meta_web",
+            "delta": -32.9
+          }
+        ]
+      },
+      "M2": {
+        "metrics": {
+          "mape_pct": 15.001,
+          "smape_pct": 16.542,
+          "mae": 580544.417,
+          "rmse": 647008.07,
+          "hdi_89_coverage_pct": 38.5
+        },
+        "signed_mean_pct": -13.997,
+        "n_over_predicted": 1,
+        "convergence": {
+          "rhat_max": 1.0034,
+          "ess_min": 1678.3,
+          "divergences": 0
+        },
+        "icac_by_channel": {
+          "meta_ios": 129.91,
+          "meta_android": 81.84,
+          "meta_web": 253.73,
+          "tiktok_ios": 281.2,
+          "tiktok_android": 109.26,
+          "tiktok_web": 118.35,
+          "ctv": 128.06
+        },
+        "gamma_control_mean": -0.010993,
+        "gamma_control_hdi89": [
+          [
+            -0.01444370059912939,
+            -0.00769189534599238
+          ]
+        ],
+        "icac_deltas_vs_canonical": {
+          "meta_ios": -7.28,
+          "meta_android": -3.34,
+          "meta_web": -22.72,
+          "tiktok_ios": -6.73,
+          "tiktok_android": -1.98,
+          "tiktok_web": -16.29,
+          "ctv": -10.58
+        },
+        "icac_max_abs_movement": 22.72,
+        "icac_breaches_30": []
+      }
+    },
+    {
+      "config_name": "loose",
+      "gamma_prior_repr": "Prior(\"Normal\", mu=0.0, sigma=0.1, dims=\"control\")",
+      "M1": {
+        "metrics": {
+          "mape_pct": 16.238,
+          "smape_pct": 16.507,
+          "mae": 2995.109,
+          "rmse": 3394.65,
+          "hdi_89_coverage_pct": 46.2
+        },
+        "signed_mean_pct": -3.577,
+        "n_over_predicted": 4,
+        "convergence": {
+          "rhat_max": 1.0033,
+          "ess_min": 1085.3,
+          "divergences": 0
+        },
+        "icac_by_channel": {
+          "meta_ios": 130.38,
+          "meta_android": 83.93,
+          "meta_web": 247.72,
+          "tiktok_ios": 279.85,
+          "tiktok_android": 109.49,
+          "tiktok_web": 116.62,
+          "ctv": 127.06
+        },
+        "gamma_control_mean": -0.014175,
+        "gamma_control_hdi89": [
+          [
+            -0.01789633529369291,
+            -0.010502245367232512
+          ]
+        ],
+        "icac_deltas_vs_canonical": {
+          "meta_ios": -7.32,
+          "meta_android": -2.36,
+          "meta_web": -32.88,
+          "tiktok_ios": -9.13,
+          "tiktok_android": -1.89,
+          "tiktok_web": -20.87,
+          "ctv": -13.15
+        },
+        "icac_max_abs_movement": 32.88,
+        "icac_breaches_30": [
+          {
+            "channel": "meta_web",
+            "delta": -32.88
+          }
+        ]
+      },
+      "M2": {
+        "metrics": {
+          "mape_pct": 15.017,
+          "smape_pct": 16.553,
+          "mae": 582438.507,
+          "rmse": 646111.927,
+          "hdi_89_coverage_pct": 38.5
+        },
+        "signed_mean_pct": -14.148,
+        "n_over_predicted": 1,
+        "convergence": {
+          "rhat_max": 1.0059,
+          "ess_min": 1545.5,
+          "divergences": 0
+        },
+        "icac_by_channel": {
+          "meta_ios": 130.05,
+          "meta_android": 81.87,
+          "meta_web": 254.82,
+          "tiktok_ios": 280.35,
+          "tiktok_android": 109.5,
+          "tiktok_web": 118.64,
+          "ctv": 128.72
+        },
+        "gamma_control_mean": -0.010868,
+        "gamma_control_hdi89": [
+          [
+            -0.014219432535977312,
+            -0.0076871058796073935
+          ]
+        ],
+        "icac_deltas_vs_canonical": {
+          "meta_ios": -7.14,
+          "meta_android": -3.31,
+          "meta_web": -21.63,
+          "tiktok_ios": -7.58,
+          "tiktok_android": -1.74,
+          "tiktok_web": -16.0,
+          "ctv": -9.92
+        },
+        "icac_max_abs_movement": 21.63,
+        "icac_breaches_30": []
+      }
+    },
+    {
+      "config_name": "medium",
+      "gamma_prior_repr": "Prior(\"Normal\", mu=0.0, sigma=0.05, dims=\"control\")",
+      "M1": {
+        "metrics": {
+          "mape_pct": 16.124,
+          "smape_pct": 16.434,
+          "mae": 2971.339,
+          "rmse": 3353.52,
+          "hdi_89_coverage_pct": 46.2
+        },
+        "signed_mean_pct": -3.832,
+        "n_over_predicted": 4,
+        "convergence": {
+          "rhat_max": 1.0046,
+          "ess_min": 1157.7,
+          "divergences": 0
+        },
+        "icac_by_channel": {
+          "meta_ios": 130.67,
+          "meta_android": 84.25,
+          "meta_web": 248.36,
+          "tiktok_ios": 279.48,
+          "tiktok_android": 109.29,
+          "tiktok_web": 116.42,
+          "ctv": 127.54
+        },
+        "gamma_control_mean": -0.014121,
+        "gamma_control_hdi89": [
+          [
+            -0.017540373070491073,
+            -0.010223994334774136
+          ]
+        ],
+        "icac_deltas_vs_canonical": {
+          "meta_ios": -7.03,
+          "meta_android": -2.04,
+          "meta_web": -32.24,
+          "tiktok_ios": -9.5,
+          "tiktok_android": -2.09,
+          "tiktok_web": -21.07,
+          "ctv": -12.67
+        },
+        "icac_max_abs_movement": 32.24,
+        "icac_breaches_30": [
+          {
+            "channel": "meta_web",
+            "delta": -32.24
+          }
+        ]
+      },
+      "M2": {
+        "metrics": {
+          "mape_pct": 14.982,
+          "smape_pct": 16.509,
+          "mae": 581074.631,
+          "rmse": 644634.466,
+          "hdi_89_coverage_pct": 38.5
+        },
+        "signed_mean_pct": -14.105,
+        "n_over_predicted": 1,
+        "convergence": {
+          "rhat_max": 1.004,
+          "ess_min": 1676.8,
+          "divergences": 0
+        },
+        "icac_by_channel": {
+          "meta_ios": 130.12,
+          "meta_android": 82.07,
+          "meta_web": 253.74,
+          "tiktok_ios": 280.16,
+          "tiktok_android": 109.44,
+          "tiktok_web": 118.83,
+          "ctv": 127.56
+        },
+        "gamma_control_mean": -0.010859,
+        "gamma_control_hdi89": [
+          [
+            -0.014278276223672224,
+            -0.007756577996921857
+          ]
+        ],
+        "icac_deltas_vs_canonical": {
+          "meta_ios": -7.07,
+          "meta_android": -3.11,
+          "meta_web": -22.71,
+          "tiktok_ios": -7.77,
+          "tiktok_android": -1.8,
+          "tiktok_web": -15.81,
+          "ctv": -11.08
+        },
+        "icac_max_abs_movement": 22.71,
+        "icac_breaches_30": []
+      }
+    },
+    {
+      "config_name": "tight",
+      "gamma_prior_repr": "Prior(\"Normal\", mu=0.0, sigma=0.02, dims=\"control\")",
+      "M1": {
+        "metrics": {
+          "mape_pct": 15.921,
+          "smape_pct": 16.244,
+          "mae": 2932.715,
+          "rmse": 3305.415,
+          "hdi_89_coverage_pct": 46.2
+        },
+        "signed_mean_pct": -3.91,
+        "n_over_predicted": 4,
+        "convergence": {
+          "rhat_max": 1.0046,
+          "ess_min": 1238.4,
+          "divergences": 0
+        },
+        "icac_by_channel": {
+          "meta_ios": 130.12,
+          "meta_android": 84.01,
+          "meta_web": 248.05,
+          "tiktok_ios": 278.98,
+          "tiktok_android": 109.61,
+          "tiktok_web": 116.62,
+          "ctv": 127.32
+        },
+        "gamma_control_mean": -0.013983,
+        "gamma_control_hdi89": [
+          [
+            -0.017646368428444074,
+            -0.010451571514051457
+          ]
+        ],
+        "icac_deltas_vs_canonical": {
+          "meta_ios": -7.58,
+          "meta_android": -2.28,
+          "meta_web": -32.55,
+          "tiktok_ios": -10.0,
+          "tiktok_android": -1.77,
+          "tiktok_web": -20.87,
+          "ctv": -12.89
+        },
+        "icac_max_abs_movement": 32.55,
+        "icac_breaches_30": [
+          {
+            "channel": "meta_web",
+            "delta": -32.55
+          }
+        ]
+      },
+      "M2": {
+        "metrics": {
+          "mape_pct": 15.049,
+          "smape_pct": 16.593,
+          "mae": 583404.644,
+          "rmse": 647607.133,
+          "hdi_89_coverage_pct": 38.5
+        },
+        "signed_mean_pct": -14.162,
+        "n_over_predicted": 1,
+        "convergence": {
+          "rhat_max": 1.0033,
+          "ess_min": 1801.3,
+          "divergences": 0
+        },
+        "icac_by_channel": {
+          "meta_ios": 130.11,
+          "meta_android": 82.05,
+          "meta_web": 254.07,
+          "tiktok_ios": 280.89,
+          "tiktok_android": 109.31,
+          "tiktok_web": 118.46,
+          "ctv": 128.51
+        },
+        "gamma_control_mean": -0.010888,
+        "gamma_control_hdi89": [
+          [
+            -0.01397158779573392,
+            -0.007597947482715491
+          ]
+        ],
+        "icac_deltas_vs_canonical": {
+          "meta_ios": -7.08,
+          "meta_android": -3.13,
+          "meta_web": -22.38,
+          "tiktok_ios": -7.04,
+          "tiktok_android": -1.93,
+          "tiktok_web": -16.18,
+          "ctv": -10.13
+        },
+        "icac_max_abs_movement": 22.38,
+        "icac_breaches_30": []
+      }
+    }
+  ]
+}

@@ -1,19 +1,14 @@
 {
-  "script": "11b_oot_validation_M1_D_gamma",
-  "canonical_version": "M3.5b_fix_a_2026-05-20_oot_M1_D_gamma_v1",
-  "model": "Model 1 (y=CONVERSIONS) with D-\u03b3 trend control 't' \u2014 D028 canonical",
-  "remedy_kind": "D-\u03b3 (linear trend control_columns=['t'], default Normal(0, 2) prior)",
-  "supersedes": "M3.5b_fix_a_2026-05-19_oot_v1 for Model 1 only",
-  "decision_reference": "D028 (proposals/2026-05-20_d028_M1_D_gamma_promotion.md)",
-  "m2_status_note": "M2 OOT artifacts (oot_model2_ltv.json + oot_model2_ltv_timeseries.csv) are NOT touched by this script. M2 remains at canonical M3.5b Fix-A (stamp 'M3.5b_fix_a_2026-05-19_oot_v1') per Option \u03b1 \u2014 +14.96% one-directional OOT over-prediction accepted as documented limitation.",
-  "split": {
-    "train_start": "2024-07-01",
-    "train_end": "2025-12-29",
-    "test_start": "2026-01-05",
-    "test_end": "2026-03-30",
-    "n_train_weeks": 79,
-    "n_test_weeks": 13
-  },
+  "script": "14_oot_remediation_v2",
+  "canonical_version": "M3.5b_fix_a_2026-05-20_q34_remedy_D_epsilon_v1",
+  "model": "Model 1 (y=CONVERSIONS) with D-\u03b3 trend control 't'",
+  "remedy_kind": "D-\u03b3 (linear trend control)",
+  "n_train": 79,
+  "n_test": 13,
+  "train_start": "2024-07-01",
+  "train_end": "2025-12-29",
+  "test_start": "2026-01-05",
+  "test_end": "2026-03-30",
   "channel_columns": [
     "apple_search",
     "applovin_android",
@@ -38,12 +33,7 @@
   "control_columns": [
     "t"
   ],
-  "convergence": {
-    "rhat_max": 1.0056,
-    "ess_min": 1208.0,
-    "divergences": 0
-  },
-  "oot_metrics": {
+  "metrics": {
     "mape_pct": 16.132,
     "smape_pct": 16.413,
     "mae": 2974.648,
@@ -52,6 +42,11 @@
   },
   "signed_mean_pct": -3.655,
   "n_over_predicted": 4,
+  "convergence": {
+    "rhat_max": 1.0056,
+    "ess_min": 1208.0,
+    "divergences": 0
+  },
   "predicted_weekly": [
     14485.515323237258,
     14017.478927221524,
@@ -127,59 +122,97 @@
     "2026-03-23",
     "2026-03-30"
   ],
-  "lift_tests_in_training": [
+  "lift_tests_applied": [
     {
       "label": "meta_ios_may25",
       "channel": "meta_ios",
-      "n_training_weeks": 2
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y": 2023.0,
+      "sigma": 202.3,
+      "n_weeks": 2
     },
     {
       "label": "meta_android_may25",
       "channel": "meta_android",
-      "n_training_weeks": 2
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y": 2459.0,
+      "sigma": 245.9,
+      "n_weeks": 2
     },
     {
       "label": "meta_web_may25",
       "channel": "meta_web",
-      "n_training_weeks": 2
+      "start": "2025-05-06",
+      "end": "2025-05-13",
+      "delta_y": 1974.0,
+      "sigma": 197.4,
+      "n_weeks": 2
     },
     {
       "label": "tiktok_ios_aug25",
       "channel": "tiktok_ios",
-      "n_training_weeks": 4
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y": 663.8,
+      "sigma": 66.4,
+      "n_weeks": 4
     },
     {
       "label": "tiktok_android_aug25",
       "channel": "tiktok_android",
-      "n_training_weeks": 4
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y": 759.5,
+      "sigma": 75.95,
+      "n_weeks": 4
     },
     {
       "label": "tiktok_web_aug25",
       "channel": "tiktok_web",
-      "n_training_weeks": 4
+      "start": "2025-08-22",
+      "end": "2025-09-14",
+      "delta_y": 7250.8,
+      "sigma": 725.08,
+      "n_weeks": 4
     },
     {
       "label": "ctv_oct25",
       "channel": "ctv",
-      "n_training_weeks": 4
+      "start": "2025-10-06",
+      "end": "2025-11-01",
+      "delta_y": 1908.0,
+      "sigma": 386.8,
+      "n_weeks": 4
     },
     {
       "label": "meta_ios_jan26",
       "channel": "meta_ios",
-      "n_training_weeks": 1
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y": 28.0,
+      "sigma": 90.0,
+      "n_weeks": 1
     },
     {
       "label": "meta_android_jan26",
       "channel": "meta_android",
-      "n_training_weeks": 1
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y": 1022.0,
+      "sigma": 3066.0,
+      "n_weeks": 1
     },
     {
       "label": "meta_web_jan26",
       "channel": "meta_web",
-      "n_training_weeks": 1
+      "start": "2026-01-03",
+      "end": "2026-01-07",
+      "delta_y": 3142.0,
+      "sigma": 9426.0,
+      "n_weeks": 1
     }
   ],
-  "lift_test_leak_note": "Meta Jan 2026 lift window (2026-01-03 \u2192 2026-01-07) overlaps W-MON week 2025-12-29 (training) only \u2014 W-MON week 2026-01-05 falls in the hold-out. DP-D Option 3 (approved 2026-05-19): prior kept verbatim from canonical Fix-A table. Note that with only 1 of the canonical 2 W-MON weeks remaining in training, the prior's per-week constraint is stronger than the canonical M3.5b fit; wide \u03c3 (3\u00d7 max(\u03b4,30)) limits the magnitude of this effect.",
-  "accepted_cost_note": "M1 meta_web windowed iCAC drifts $32.90 under D-\u03b3 vs canonical M3.5b Fix-A ($280.60 \u2192 $247.70). Treated as documented Q35-bounded calibration noise. NOT surfaced on Decisioning Summary or main dashboard (both read M2-derived *_baseline.json; M1 iCAC is internal-only). See outputs/P2_04_full_channel/metrics/q34_d_epsilon_icac_check.json for the full gate-c iCAC regression table.",
-  "notes": "Canonical M1 OOT under D028. Identical fit to scripts/13_oot_remediation_v1.py M1 section and scripts/14_oot_remediation_v2.py M1 section (random_seed=42). Reuses build_dataset + predict_oot + lift-prior plumbing from scripts/11_oot_validation.py and add_trend_column + fit_one_model_with_trend from scripts/13_oot_remediation_v1.py."
+  "notes": "M1 uses D-\u03b3 (linear trend control 't'). Identical config to scripts/13_oot_remediation_v1.py; reproduces D-\u03b3 M1 result for the asymmetric D-\u03b5 v1 architecture. Trend absorbs secular conversion-volume drift that drove the M7 baseline 13/13 over-prediction."
 }
