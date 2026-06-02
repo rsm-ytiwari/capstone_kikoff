@@ -27,7 +27,7 @@ import pandas as pd
 from app.data_loader import (
     load_baseline, load_baseline_split, load_icac_time, load_iroas_time, load_ltv_time,
     load_icac_saturation, load_iroas_saturation, load_spend_weekly,
-    load_convergence, CHANNEL_DISPLAY,
+    load_convergence, load_oot, CHANNEL_DISPLAY,
     CHANNELS_LIFT_TESTED, CHANNELS_UNTESTED, CANONICAL_VERSION,
 )
 from app.charts import (
@@ -61,8 +61,8 @@ def filter_by_period(df: pd.DataFrame, period: str, date_col: str = "date") -> p
 # Source of truth = st.session_state.channel_key. The radios are mirrors that
 # show "selected" only for the active group.
 if "channel_key" not in st.session_state:
-    st.session_state.channel_key = "meta_ios"
-    st.session_state.ch_lift_tested = "meta_ios"
+    st.session_state.channel_key = "meta_web"
+    st.session_state.ch_lift_tested = "meta_web"
     st.session_state.ch_untested = None
 
 
@@ -157,52 +157,8 @@ iroas_time_view = filter_by_period(iroas_time_df, period)
 ltv_time_view   = filter_by_period(ltv_time_df, period)
 spend_view      = filter_by_period(spend_df, period)
 
-# ── Model health status bar ──────────────────────────────────────────────────
+# ── Headline value cards (lead with value, not diagnostics) ───────────────────
 st.markdown("---")
-st.markdown("#### Model Health")
-# D029 (2026-05-20): D021 <20% baseline gate DEPRECATED. Replaced single global
-# Baseline metric (which used the stale <80% flag) with two-metric pair
-# (in-window + global), neutral coloring, tooltip pointer to Methodology page.
-baseline_split = load_baseline_split()
-in_window_pct = baseline_split["aggregate"]["in_window_baseline_pct"]
-global_pct    = baseline_split["sanity"]["global_baseline_pct"]
-mc1, mc2, mc3, mc4, mc5 = st.columns(5)
-rhat = conv["convergence"]["rhat_max"]
-ess  = conv["convergence"]["ess_min"]
-mc1.metric("R-hat (max)", f"{rhat:.3f}", delta="PASS" if rhat < 1.1 else "FAIL",
-           delta_color="normal" if rhat < 1.1 else "inverse")
-mc2.metric("ESS (min)", f"{int(ess)}", delta="PASS" if ess > 400 else "FAIL",
-           delta_color="normal" if ess > 400 else "inverse")
-mc3.metric(
-    "Baseline (in-window)",
-    f"{in_window_pct:.1f}%",
-    delta="reported (D029)",
-    delta_color="off",
-    help=(
-        "Mean baseline % across the 12 W-MON weeks that overlap any of the 7 "
-        "lift-test windows. D029 (2026-05-20) deprecated D021's <20% threshold "
-        "gate — see Methodology page for the full decomposition and the "
-        "view-through mechanism for Meta Web."
-    ),
-)
-mc4.metric(
-    "Baseline (global)",
-    f"{global_pct:.1f}%",
-    delta="reported (D029)",
-    delta_color="off",
-    help=(
-        "Global baseline % across all 93 weeks. Decomposes empirically into "
-        "~35% irreducible organic LTV (Abheek/Northbeam per Mtg 6 fact #13) + "
-        "~32pp missed paid attribution (largely Meta Web view-through). "
-        "Apples-to-apples on the attributed-revenue universe ≈ 45–57% band. "
-        "See Methodology page (D029)."
-    ),
-)
-mc5.metric("Channels modeled", str(conv["n_channels"]))
-
-st.markdown("---")
-
-# ── Summary stats (filtered by active time-period toggle) ────────────────────
 st.markdown(f"#### Channel Totals — {period}")
 ltv_revenue_total = float(ltv_time_view["mean"].sum()) if not ltv_time_view.empty else 0.0
 spend_col_name = f"{channel_key}_spend"
@@ -222,6 +178,71 @@ s1, s2, s3 = st.columns(3)
 s1.metric("LTV Revenue (attributed)", _fmt_money(ltv_revenue_total))
 s2.metric("Spend", _fmt_money(spend_total))
 s3.metric("Total iROAS", f"{total_iroas:.3f}x")
+
+# ── Out-of-time validation headline (Abheek's #1 metric) ──────────────────────
+def _mape_dot(m: float) -> str:
+    if m < 15: return "🟢"
+    if m < 25: return "🟡"
+    return "🔴"
+
+
+m1_oot_metrics, _ = load_oot("m1")
+m2_oot_metrics, _ = load_oot("m2")
+m1_mape = m1_oot_metrics["oot_metrics"]["mape_pct"]
+m2_mape = m2_oot_metrics["oot_metrics"]["mape_pct"]
+st.success(
+    f"**Out-of-time forecast accuracy** (hold-out weeks the model never trained on): "
+    f"M1 conversions MAPE {m1_mape:.1f}% {_mape_dot(m1_mape)} · "
+    f"M2 LTV MAPE {m2_mape:.1f}% {_mape_dot(m2_mape)} — Abheek's headline MMM metric."
+)
+st.page_link("pages/2_OOT_Validation.py", label="Open OOT Validation page", icon="📈")
+
+# ── Model health & diagnostics (tucked into an expander) ──────────────────────
+# D029 (2026-05-20): D021 <20% baseline gate DEPRECATED. Two-metric pair
+# (in-window + global), neutral coloring; global baseline now shown with the
+# apples-to-apples band inline (not tooltip-only) so the bare 67% doesn't read
+# as "two-thirds unexplained" on a shared screen.
+baseline_split = load_baseline_split()
+in_window_pct = baseline_split["aggregate"]["in_window_baseline_pct"]
+global_pct    = baseline_split["sanity"]["global_baseline_pct"]
+with st.expander("Model health & diagnostics (R-hat, ESS, baseline decomposition)"):
+    mc1, mc2, mc3, mc4, mc5 = st.columns(5)
+    rhat = conv["convergence"]["rhat_max"]
+    ess  = conv["convergence"]["ess_min"]
+    mc1.metric("R-hat (max)", f"{rhat:.3f}", delta="PASS" if rhat < 1.1 else "FAIL",
+               delta_color="normal" if rhat < 1.1 else "inverse")
+    mc2.metric("ESS (min)", f"{int(ess)}", delta="PASS" if ess > 400 else "FAIL",
+               delta_color="normal" if ess > 400 else "inverse")
+    mc3.metric(
+        "Baseline (in-window)",
+        f"{in_window_pct:.1f}%",
+        delta="reported (D029)",
+        delta_color="off",
+        help=(
+            "Mean baseline % across the 12 W-MON weeks that overlap any of the 7 "
+            "lift-test windows. D029 (2026-05-20) deprecated D021's <20% threshold "
+            "gate — see Methodology page for the full decomposition and the "
+            "view-through mechanism for Meta Web."
+        ),
+    )
+    mc4.metric(
+        "Baseline (global)",
+        f"{global_pct:.1f}%",
+        delta="reported (D029)",
+        delta_color="off",
+        help=(
+            "Global baseline % across all 93 weeks. See the inline note below for "
+            "the apples-to-apples decomposition (D029)."
+        ),
+    )
+    mc5.metric("Channels modeled", str(conv["n_channels"]))
+    st.caption(
+        f"**Baseline (global) {global_pct:.1f}%** is not 'unexplained' — it decomposes into "
+        f"~35% irreducible organic LTV (Abheek/Northbeam per Mtg 6 fact #13) + ~32pp missed "
+        f"paid attribution (largely Meta Web view-through). On an **apples-to-apples "
+        f"attributed-revenue basis this is a ~45–57% band**, comparable to Northbeam. "
+        f"See the Methodology page (D029)."
+    )
 
 st.markdown("---")
 

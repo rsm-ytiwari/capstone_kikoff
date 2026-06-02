@@ -310,9 +310,11 @@ def fig_icac_saturation(df: pd.DataFrame, median_spend: float,
     display = CHANNEL_DISPLAY.get(channel, channel)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    # Crop to within ~15% above observed-spend max so we don't show deep extrapolation
+    # Crop AT observed-spend max — no extrapolation overhang. The steep tail past
+    # observed max was blowing up the y-axis (rangemode tozero) and flattening the
+    # in-range curve. Showing only the observed range keeps the real curvature legible.
     observed_max = float(spend_df[spend_col].max()) if (spend_df is not None and not spend_df.empty) else float(df["spend"].max())
-    x_cap = observed_max * 1.15
+    x_cap = observed_max
 
     # Primary = MARGINAL iCAC (cost of the next conversion); secondary = AVERAGE
     # iCAC (cost over all spend). Fall back to average if a pre-marginal CSV is loaded.
@@ -387,7 +389,7 @@ def fig_icac_saturation(df: pd.DataFrame, median_spend: float,
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text=f"iCAC Saturation Curve — {display}<br><sub>Spend vs. marginal iCAC · histogram = observed weeks per spend bin · curve right of dashed line is extrapolation</sub>",
+        title=dict(text=f"iCAC Saturation Curve — {display}<br><sub>Spend vs. marginal iCAC · histogram = observed weeks per spend bin · marginal cost accelerates further beyond observed spend (not shown)</sub>",
                    font=dict(size=14)),
         xaxis_title="Weekly Spend ($)",
         height=420,
@@ -418,8 +420,9 @@ def fig_iroas_saturation(df: pd.DataFrame, median_spend: float,
     display = CHANNEL_DISPLAY.get(channel, channel)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+    # Crop AT observed-spend max — no extrapolation overhang (see fig_icac_saturation).
     observed_max = float(spend_df[spend_col].max()) if (spend_df is not None and not spend_df.empty) else float(df["spend"].max())
-    x_cap = observed_max * 1.15
+    x_cap = observed_max
 
     # Primary = MARGINAL iROAS (return on the next dollar); secondary = AVERAGE
     # iROAS (return over all spend). Fall back to average if a pre-marginal CSV is loaded.
@@ -494,7 +497,7 @@ def fig_iroas_saturation(df: pd.DataFrame, median_spend: float,
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text=f"iROAS Saturation Curve — {display}<br><sub>Spend vs. marginal iROAS · histogram = observed weeks per spend bin · curve right of dashed line is extrapolation</sub>",
+        title=dict(text=f"iROAS Saturation Curve — {display}<br><sub>Spend vs. marginal iROAS · histogram = observed weeks per spend bin · marginal return keeps falling beyond observed spend (not shown)</sub>",
                    font=dict(size=14)),
         xaxis_title="Weekly Spend ($)",
         height=420,
