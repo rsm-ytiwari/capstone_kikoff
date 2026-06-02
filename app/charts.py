@@ -59,7 +59,7 @@ def fig_icac_baseline(baseline: dict, channel: str = "meta_web") -> go.Figure:
     is_tested = baseline.get("is_lift_tested", False)
     display   = CHANNEL_DISPLAY.get(channel, channel)
     benchmark = baseline.get("windowed_iCAC_truth") if is_tested else None
-    benchmark_label = "Truth" if is_tested else None
+    benchmark_label = "Experiment" if is_tested else None
     # Meta-Web-only Northbeam reference, preserved from prior dashboard.
     northbeam = baseline.get("northbeam_icac_ref")
 
@@ -70,8 +70,8 @@ def fig_icac_baseline(baseline: dict, channel: str = "meta_web") -> go.Figure:
         marker_color=BLUE,
         name=f"Median: {_dollar_fmt(point_v)}",
         hovertemplate=(
-            f"Posterior median iCAC: {_dollar_fmt(point_v)}<br>"
-            f"94% HDI: [{_dollar_fmt(lo)}, {_dollar_fmt(hi)}]<extra></extra>"
+            f"Best estimate iCAC: {_dollar_fmt(point_v)}<br>"
+            f"94% credible range: [{_dollar_fmt(lo)}, {_dollar_fmt(hi)}]<extra></extra>"
         ),
     ))
     fig.add_shape(type="line", x0=lo, x1=lo, y0=-0.4, y1=0.4,
@@ -94,13 +94,13 @@ def fig_icac_baseline(baseline: dict, channel: str = "meta_web") -> go.Figure:
     if northbeam is not None and np.isfinite(northbeam): candidates.append(northbeam)
     x_max = max(candidates) * 1.20
 
-    sub = ("windowed posterior median during lift-test window"
-           if is_tested else "full-history aggregate posterior")
+    sub = ("best estimate during the experiment window"
+           if is_tested else "all-history average")
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text=f"Baseline iCAC — {display}<br><sub>Model 2 · y=LTV_3YEAR · {sub} + 94% HDI</sub>",
+        title=dict(text=f"Baseline iCAC: {display}<br><sub>LTV model · {sub} + 94% credible range</sub>",
                    font=dict(size=14)),
-        xaxis_title="iCAC (USD per implied conversion)",
+        xaxis_title="Cost per acquired customer (iCAC), USD",
         height=280,
         showlegend=True,
     )
@@ -123,8 +123,8 @@ def fig_iroas_baseline(baseline: dict, channel: str = "meta_web") -> go.Figure:
         marker_color=ORANGE,
         name=f"Mean: {mean_v:.3f}x",
         hovertemplate=(
-            f"iROAS: {mean_v:.3f}x<br>94% HDI: [{lo:.3f}x, {hi:.3f}x]<br>"
-            f"{pct_below:.0f}% of posterior below break-even<extra></extra>"
+            f"iROAS: {mean_v:.3f}x<br>94% credible range: [{lo:.3f}x, {hi:.3f}x]<br>"
+            f"{pct_below:.0f}% chance below break-even<extra></extra>"
         ),
     ))
     fig.add_shape(type="line", x0=lo, x1=lo, y0=-0.4, y1=0.4,
@@ -145,7 +145,7 @@ def fig_iroas_baseline(baseline: dict, channel: str = "meta_web") -> go.Figure:
     x_max = max(candidates) * 1.15
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text=f"Baseline iROAS — {display}<br><sub>Model 2 · y=LTV_3YEAR · posterior mean + 94% HDI</sub>",
+        title=dict(text=f"Baseline iROAS: {display}<br><sub>LTV model · best estimate + 94% credible range</sub>",
                    font=dict(size=14)),
         xaxis_title="iROAS (LTV dollars per dollar spent)",
         height=280,
@@ -171,17 +171,17 @@ def fig_icac_time(df: pd.DataFrame, benchmark: float | None,
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["lo95"], mode="lines",
         line=dict(width=0), fill="tonexty", fillcolor=BLUE_FILL,
-        name="95% CI", hoverinfo="skip",
+        name="95% credible range", hoverinfo="skip",
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["mean"], mode="lines",
         line=dict(color=BLUE, width=2),
-        name="Posterior mean iCAC",
+        name="Best estimate (iCAC)",
         hovertemplate="Week: %{x|%Y-%m-%d}<br>iCAC: $%{y:,.0f}<extra></extra>",
     ), secondary_y=False)
     if benchmark is not None and np.isfinite(benchmark):
         fig.add_hline(y=benchmark, line_dash="dash", line_color=ORANGE,
-                      annotation_text=f"Lift-test truth ${benchmark:.0f}",
+                      annotation_text=f"Experiment result ${benchmark:.0f}",
                       annotation_position="bottom right")
 
     if spend_df is not None and not spend_df.empty and spend_col in spend_df.columns:
@@ -194,7 +194,7 @@ def fig_icac_time(df: pd.DataFrame, benchmark: float | None,
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text=f"iCAC Over Time — {display}<br><sub>Weekly posterior mean + 95% CI · spend overlay</sub>",
+        title=dict(text=f"iCAC Over Time: {display}<br><sub>Weekly best estimate + 95% credible range · spend overlay</sub>",
                    font=dict(size=14)),
         xaxis_title="Week",
         height=380,
@@ -222,12 +222,12 @@ def fig_iroas_time(df: pd.DataFrame,
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["lo95"], mode="lines",
         line=dict(width=0), fill="tonexty", fillcolor=ORANGE_FILL,
-        name="95% CI", hoverinfo="skip",
+        name="95% credible range", hoverinfo="skip",
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["mean"], mode="lines",
         line=dict(color=ORANGE, width=2),
-        name="Posterior mean iROAS",
+        name="Best estimate (iROAS)",
         hovertemplate="Week: %{x|%Y-%m-%d}<br>iROAS: %{y:.3f}x<extra></extra>",
     ), secondary_y=False)
     fig.add_hline(y=1.0, line_dash="dash", line_color=GRAY,
@@ -243,7 +243,7 @@ def fig_iroas_time(df: pd.DataFrame,
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text=f"iROAS Over Time — {display}<br><sub>Weekly posterior mean + 95% CI · spend overlay</sub>",
+        title=dict(text=f"iROAS Over Time: {display}<br><sub>Weekly best estimate + 95% credible range · spend overlay</sub>",
                    font=dict(size=14)),
         xaxis_title="Week",
         height=380,
@@ -266,7 +266,7 @@ def fig_ltv_time(df: pd.DataFrame, channel: str = "meta_web") -> go.Figure:
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["lo95"] / 1_000, mode="lines",
         line=dict(width=0), fill="tonexty", fillcolor=BLUE_FILL,
-        name="95% CI", hoverinfo="skip",
+        name="95% credible range", hoverinfo="skip",
     ))
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["mean"] / 1_000, mode="lines",
@@ -276,7 +276,7 @@ def fig_ltv_time(df: pd.DataFrame, channel: str = "meta_web") -> go.Figure:
     ))
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text=f"LTV Contribution Over Time — {display}<br><sub>Weekly LTV_3YEAR attributed to {display} (posterior mean + 95% CI)</sub>",
+        title=dict(text=f"LTV Contribution Over Time: {display}<br><sub>Weekly LTV attributed to {display} (best estimate + 95% credible range)</sub>",
                    font=dict(size=14)),
         xaxis_title="Week",
         yaxis_title="LTV_3YEAR Contribution ($K / week)",
@@ -349,11 +349,11 @@ def fig_icac_saturation(df: pd.DataFrame, median_spend: float,
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=x, y=lo, mode="lines", line=dict(width=0),
-        fill="tonexty", fillcolor=BLUE_FILL, name="95% HDI (marginal)", hoverinfo="skip",
+        fill="tonexty", fillcolor=BLUE_FILL, name="95% credible range (marginal)", hoverinfo="skip",
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=x, y=m, mode="lines", line=dict(color=BLUE, width=2.5),
-        name="Marginal iCAC (posterior)",
+        name="Marginal iCAC (next dollar)",
         hovertemplate=(
             "Spend: $%{x:,.0f}<br>"
             "Marginal iCAC: $%{y:,.0f}<br>"
@@ -389,7 +389,7 @@ def fig_icac_saturation(df: pd.DataFrame, median_spend: float,
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text=f"iCAC Saturation Curve — {display}<br><sub>Spend vs. marginal iCAC · histogram = observed weeks per spend bin · marginal cost accelerates further beyond observed spend (not shown)</sub>",
+        title=dict(text=f"iCAC Saturation Curve: {display}<br><sub>Spend vs. next-dollar (marginal) iCAC · bars = number of weeks observed at each spend level · cost rises further beyond observed spend (not shown)</sub>",
                    font=dict(size=14)),
         xaxis_title="Weekly Spend ($)",
         height=420,
@@ -457,11 +457,11 @@ def fig_iroas_saturation(df: pd.DataFrame, median_spend: float,
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=x, y=lo, mode="lines", line=dict(width=0),
-        fill="tonexty", fillcolor=ORANGE_FILL, name="95% HDI (marginal)", hoverinfo="skip",
+        fill="tonexty", fillcolor=ORANGE_FILL, name="95% credible range (marginal)", hoverinfo="skip",
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=x, y=m, mode="lines", line=dict(color=ORANGE, width=2.5),
-        name="Marginal iROAS (posterior)",
+        name="Marginal iROAS (next dollar)",
         hovertemplate=(
             "Spend: $%{x:,.0f}<br>"
             "Marginal iROAS: %{y:.3f}x<br>"
@@ -497,7 +497,7 @@ def fig_iroas_saturation(df: pd.DataFrame, median_spend: float,
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text=f"iROAS Saturation Curve — {display}<br><sub>Spend vs. marginal iROAS · histogram = observed weeks per spend bin · marginal return keeps falling beyond observed spend (not shown)</sub>",
+        title=dict(text=f"iROAS Saturation Curve: {display}<br><sub>Spend vs. next-dollar (marginal) iROAS · bars = number of weeks observed at each spend level · return keeps falling beyond observed spend (not shown)</sub>",
                    font=dict(size=14)),
         xaxis_title="Weekly Spend ($)",
         height=420,
@@ -535,13 +535,13 @@ def fig_oot_predicted_vs_actual(df: pd.DataFrame, title: str, y_label: str,
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["predicted_hdi_lo"], mode="lines",
         line=dict(width=0), fill="tonexty", fillcolor=BLUE_FILL,
-        name="89% HDI (predicted)", hoverinfo="skip",
+        name="89% credible range (predicted)", hoverinfo="skip",
     ))
     fig.add_trace(go.Scatter(
         x=df["date"], y=df["predicted_mean"], mode="lines+markers",
         line=dict(color=BLUE, width=2, dash="dash"),
         marker=dict(size=6),
-        name="Predicted (posterior mean)",
+        name="Predicted (best estimate)",
         hovertemplate=(
             "Week: %{x|%Y-%m-%d}<br>"
             + ("Predicted: $%{y:,.0f}" if dollar_axis else "Predicted: %{y:,.0f}")
@@ -585,7 +585,7 @@ def fig_spend_dist(df: pd.DataFrame,
         fig = go.Figure()
         fig.update_layout(
             **LAYOUT_BASE,
-            title=dict(text=f"Weekly Spend Distribution — {display}<br><sub>No nonzero spend weeks</sub>",
+            title=dict(text=f"Weekly Spend Distribution: {display}<br><sub>No nonzero spend weeks</sub>",
                        font=dict(size=14)),
             height=350,
         )
@@ -607,7 +607,7 @@ def fig_spend_dist(df: pd.DataFrame,
 
     fig.update_layout(
         **LAYOUT_BASE,
-        title=dict(text=f"Weekly Spend Distribution — {display}",
+        title=dict(text=f"Weekly Spend Distribution: {display}",
                    font=dict(size=14)),
         xaxis_title="Weekly Spend ($)",
         yaxis_title="Number of Weeks",

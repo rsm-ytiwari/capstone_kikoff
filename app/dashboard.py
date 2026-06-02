@@ -82,11 +82,13 @@ def _on_untested_change():
 
 with st.sidebar:
     st.markdown("## Kikoff MMM")
-    st.markdown("**Model:** LTV_3YEAR (Model 2)")
-    st.caption(f"Canonical: `{CANONICAL_VERSION}`")
+    st.markdown("**Model:** 3-year LTV (revenue model)")
+    st.caption("Cost and value figures on this page come from the LTV model. "
+               "Conversion-model accuracy is on the Out-of-Time page.")
     st.markdown("---")
     st.markdown("**Channel**")
-    st.caption("Lift-tested (7) — windowed iCAC vs experimental truth")
+    st.caption("Lift-tested (7): cost per acquired customer (iCAC) measured during "
+               "each channel's experiment window, checked against the experiment result.")
     st.radio(
         "lift_tested",
         CHANNELS_LIFT_TESTED,
@@ -96,7 +98,8 @@ with st.sidebar:
         on_change=_on_tested_change,
         index=None,
     )
-    st.caption("Untested (12) — aggregate iCAC, wider calibration uncertainty")
+    st.caption("Untested (12): cost per acquired customer averaged over all history, "
+               "with wider uncertainty (no experiment to anchor to).")
     st.radio(
         "untested",
         CHANNELS_UNTESTED,
@@ -112,10 +115,10 @@ with st.sidebar:
     st.markdown("**About**")
     st.caption(
         "This dashboard shows the current state of the Kikoff Marketing Mix Model "
-        "across all 19 channels. Lift-tested channels show **windowed iCAC** anchored "
-        "to the experimental truth window (per D023); untested channels show "
-        "**aggregate iCAC** with wider uncertainty. Charts update automatically as "
-        "the model is recalibrated and outputs are pushed to GitHub."
+        "across all 19 channels. Lift-tested channels show cost per acquired customer "
+        "measured during the channel's experiment window; untested channels show the "
+        "all-history average, with wider uncertainty. Charts update automatically as "
+        "the model is recalibrated."
     )
 
 # ── Load data ────────────────────────────────────────────────────────────────
@@ -135,10 +138,10 @@ benchmark = baseline.get("windowed_iCAC_truth") if is_lift_tested else None
 last_updated = baseline["last_updated"]
 
 # ── Header ───────────────────────────────────────────────────────────────────
-st.markdown(f"# Kikoff MMM — Model Output Dashboard")
+st.markdown("# Kikoff MMM: Model Output Dashboard")
 col_h1, col_h2, col_h3 = st.columns(3)
 col_h1.metric("Channel", CHANNEL_DISPLAY.get(channel_key, channel_key))
-col_h2.metric("Model", "LTV_3YEAR (Model 2)")
+col_h2.metric("Model", "3-year LTV (revenue)")
 col_h3.metric("Last updated", last_updated)
 
 # ── Time-period toggle (Northbeam-style) ─────────────────────────────────────
@@ -159,7 +162,7 @@ spend_view      = filter_by_period(spend_df, period)
 
 # ── Headline value cards (lead with value, not diagnostics) ───────────────────
 st.markdown("---")
-st.markdown(f"#### Channel Totals — {period}")
+st.markdown(f"#### Channel Totals: {period}")
 ltv_revenue_total = float(ltv_time_view["mean"].sum()) if not ltv_time_view.empty else 0.0
 spend_col_name = f"{channel_key}_spend"
 spend_total       = float(spend_view[spend_col_name].sum()) if not spend_view.empty else 0.0
@@ -177,9 +180,9 @@ def _fmt_money(x: float) -> str:
 s1, s2, s3 = st.columns(3)
 s1.metric("LTV Revenue (attributed)", _fmt_money(ltv_revenue_total))
 s2.metric("Spend", _fmt_money(spend_total))
-s3.metric("Total iROAS", f"{total_iroas:.3f}x")
+s3.metric("Total iROAS (LTV $ per $ spent)", f"{total_iroas:.3f}x")
 
-# ── Out-of-time validation headline (Abheek's #1 metric) ──────────────────────
+# ── Out-of-time validation headline (the headline MMM accuracy metric) ────────
 def _mape_dot(m: float) -> str:
     if m < 15: return "🟢"
     if m < 25: return "🟡"
@@ -191,11 +194,17 @@ m2_oot_metrics, _ = load_oot("m2")
 m1_mape = m1_oot_metrics["oot_metrics"]["mape_pct"]
 m2_mape = m2_oot_metrics["oot_metrics"]["mape_pct"]
 st.success(
-    f"**Out-of-time forecast accuracy** (hold-out weeks the model never trained on): "
-    f"M1 conversions MAPE {m1_mape:.1f}% {_mape_dot(m1_mape)} · "
-    f"M2 LTV MAPE {m2_mape:.1f}% {_mape_dot(m2_mape)} — Abheek's headline MMM metric."
+    f"**Out-of-time forecast accuracy** (on hold-out weeks the model never trained on; "
+    f"MAPE = average percent error, lower is better): "
+    f"conversions model {m1_mape:.1f}% {_mape_dot(m1_mape)} · "
+    f"LTV model {m2_mape:.1f}% {_mape_dot(m2_mape)}. "
+    f"This out-of-time check is the headline accuracy measure for MMM."
 )
-st.page_link("pages/2_OOT_Validation.py", label="Open OOT Validation page", icon="📈")
+st.caption(
+    "The cost and value figures on the rest of this page are from the **LTV model**. "
+    "**Conversion-model** accuracy lives on the Out-of-Time page below."
+)
+st.page_link("pages/2_OOT_Validation.py", label="Open Out-of-Time Validation page", icon="📈")
 
 # ── Model health & diagnostics (tucked into an expander) ──────────────────────
 # D029 (2026-05-20): D021 <20% baseline gate DEPRECATED. Two-metric pair
@@ -205,64 +214,69 @@ st.page_link("pages/2_OOT_Validation.py", label="Open OOT Validation page", icon
 baseline_split = load_baseline_split()
 in_window_pct = baseline_split["aggregate"]["in_window_baseline_pct"]
 global_pct    = baseline_split["sanity"]["global_baseline_pct"]
-with st.expander("Model health & diagnostics (R-hat, ESS, baseline decomposition)"):
+with st.expander("Model health & diagnostics (convergence checks + baseline breakdown)"):
     mc1, mc2, mc3, mc4, mc5 = st.columns(5)
     rhat = conv["convergence"]["rhat_max"]
     ess  = conv["convergence"]["ess_min"]
-    mc1.metric("R-hat (max)", f"{rhat:.3f}", delta="PASS" if rhat < 1.1 else "FAIL",
-               delta_color="normal" if rhat < 1.1 else "inverse")
-    mc2.metric("ESS (min)", f"{int(ess)}", delta="PASS" if ess > 400 else "FAIL",
-               delta_color="normal" if ess > 400 else "inverse")
+    mc1.metric("R-hat (convergence, want < 1.1)", f"{rhat:.3f}",
+               delta="PASS" if rhat < 1.1 else "FAIL",
+               delta_color="normal" if rhat < 1.1 else "inverse",
+               help="Did the model's estimates settle? Values near 1.0 mean yes.")
+    mc2.metric("Effective samples (want > 400)", f"{int(ess)}",
+               delta="PASS" if ess > 400 else "FAIL",
+               delta_color="normal" if ess > 400 else "inverse",
+               help="How much independent information the estimates rest on. Higher is better.")
     mc3.metric(
-        "Baseline (in-window)",
+        "Baseline (lift-test weeks)",
         f"{in_window_pct:.1f}%",
-        delta="reported (D029)",
+        delta="reported",
         delta_color="off",
         help=(
-            "Mean baseline % across the 12 W-MON weeks that overlap any of the 7 "
-            "lift-test windows. D029 (2026-05-20) deprecated D021's <20% threshold "
-            "gate — see Methodology page for the full decomposition and the "
-            "view-through mechanism for Meta Web."
+            "Baseline = demand not attributed to measured paid spend. This is the "
+            "average across the weeks that overlap the channel experiments. "
+            "See the Methodology page for the full breakdown."
         ),
     )
     mc4.metric(
-        "Baseline (global)",
+        "Baseline (all weeks)",
         f"{global_pct:.1f}%",
-        delta="reported (D029)",
+        delta="reported",
         delta_color="off",
         help=(
-            "Global baseline % across all 93 weeks. See the inline note below for "
-            "the apples-to-apples decomposition (D029)."
+            "Baseline across all weeks in the data. See the note below for the "
+            "like-for-like comparison against the attributed-revenue universe."
         ),
     )
     mc5.metric("Channels modeled", str(conv["n_channels"]))
     st.caption(
-        f"**Baseline (global) {global_pct:.1f}%** is not 'unexplained' — it decomposes into "
-        f"~35% irreducible organic LTV (Abheek/Northbeam per Mtg 6 fact #13) + ~32pp missed "
-        f"paid attribution (largely Meta Web view-through). On an **apples-to-apples "
-        f"attributed-revenue basis this is a ~45–57% band**, comparable to Northbeam. "
-        f"See the Methodology page (D029)."
+        f"**Baseline (all weeks) {global_pct:.1f}%** is not 'unexplained.' It breaks down into "
+        f"~35% organic LTV that no paid channel can claim (consistent with Northbeam's "
+        f"~65%-attributed / ~35%-organic split) plus ~32 points of paid demand the model "
+        f"can't yet credit to a channel (largely Meta Web, where conversions are driven by "
+        f"ad views rather than clicks). On a like-for-like attributed-revenue basis this is a "
+        f"**~45–57% band**, comparable to Northbeam. See the Methodology page for the full breakdown."
     )
 
 st.markdown("---")
 
 # ── Row 1: Baseline metrics ──────────────────────────────────────────────────
 display_name = CHANNEL_DISPLAY.get(channel_key, channel_key)
-st.markdown(f"#### Baseline Performance — {display_name}")
+st.markdown(f"#### Headline Cost & Return: {display_name}")
 if is_lift_tested:
-    gate_label = "PASS" if baseline.get("windowed_gate_pass") else "FAIL"
+    gate_label = "in band" if baseline.get("windowed_gate_pass") else "outside band"
     gate_color = "✅" if baseline.get("windowed_gate_pass") else "❌"
     st.caption(
-        f"Headline iCAC = **windowed posterior median during the lift-test window** (D023). "
-        f"Truth band: **${baseline['windowed_iCAC_truth']:.0f} ± ${baseline['windowed_iCAC_tol']:.0f}**. "
-        f"Windowed gate: {gate_color} **{gate_label}**. "
-        f"For audit, the full-history aggregate iCAC is ${baseline['agg_iCAC_script09']:.0f}."
+        f"Headline cost per acquired customer (iCAC) = the model's best estimate **during this "
+        f"channel's experiment window**. Experiment result to match: "
+        f"**${baseline['windowed_iCAC_truth']:.0f} ± ${baseline['windowed_iCAC_tol']:.0f}**. "
+        f"Model vs experiment: {gate_color} **{gate_label}**. "
+        f"For reference, the all-history average iCAC is ${baseline['agg_iCAC_script09']:.0f}."
     )
 else:
     st.caption(
-        "Headline iCAC = **full-history aggregate** (no lift test for this channel; "
-        "calibration uncertainty is higher than for lift-tested channels). "
-        "Tested channels can be compared to their experimental truth band; untested channels cannot."
+        "Headline cost per acquired customer (iCAC) = **all-history average** (no experiment for "
+        "this channel, so uncertainty is higher than for lift-tested channels). "
+        "Tested channels can be checked against their experiment result; untested channels cannot."
     )
 col1, col2 = st.columns(2)
 
@@ -272,18 +286,18 @@ with col1:
     with st.expander("Reading this chart"):
         if is_lift_tested:
             st.caption(
-                f"**Headline iCAC ${baseline['icac_mean']:,.0f}** (windowed posterior median; 94% HDI "
-                f"${baseline['icac_hdi_lo']:,.0f}–${baseline['icac_hdi_hi']:,.0f}). "
-                f"Truth band ${baseline['windowed_iCAC_truth']:.0f} ± ${baseline['windowed_iCAC_tol']:.0f} "
-                f"comes from the lift-test point estimate; gate passes if the headline falls inside. "
-                f"For context, full-history aggregate iCAC is ${baseline['agg_iCAC_script09']:.0f}."
+                f"**Headline iCAC ${baseline['icac_mean']:,.0f}** (best estimate during the experiment "
+                f"window; credible range ${baseline['icac_hdi_lo']:,.0f}–${baseline['icac_hdi_hi']:,.0f}). "
+                f"The experiment result to match is ${baseline['windowed_iCAC_truth']:.0f} ± "
+                f"${baseline['windowed_iCAC_tol']:.0f}; the model is in band if the headline falls inside. "
+                f"For context, the all-history average iCAC is ${baseline['agg_iCAC_script09']:.0f}."
             )
         else:
             st.caption(
-                f"**Headline iCAC ${baseline['icac_mean']:,.0f}** (full-history aggregate posterior median; "
-                f"94% HDI ${baseline['icac_hdi_lo']:,.0f}–${baseline['icac_hdi_hi']:,.0f}). "
-                f"No lift test exists for {display_name} → no experimental truth band. "
-                f"Compare against other channels with similar spend signal for relative ranking."
+                f"**Headline iCAC ${baseline['icac_mean']:,.0f}** (all-history average best estimate; "
+                f"credible range ${baseline['icac_hdi_lo']:,.0f}–${baseline['icac_hdi_hi']:,.0f}). "
+                f"No experiment exists for {display_name}, so there is no result to check against. "
+                f"Compare against other channels with similar spend for relative ranking."
             )
 
 with col2:
@@ -291,9 +305,9 @@ with col2:
                     use_container_width=True, config=CONFIG)
     with st.expander("Reading this chart"):
         st.caption(
-            f"**Baseline iROAS {baseline['iroas_mean']:.3f}x** (posterior mean; 94% HDI "
-            f"{baseline['iroas_hdi_lo']:.3f}–{baseline['iroas_hdi_hi']:.3f}) — LTV dollars attributed per dollar of spend. "
-            f"{baseline['iroas_below_breakeven_pct']:.0f}% of posterior mass sits below 1.0× break-even."
+            f"**Baseline iROAS {baseline['iroas_mean']:.3f}x** (best estimate; credible range "
+            f"{baseline['iroas_hdi_lo']:.3f}–{baseline['iroas_hdi_hi']:.3f}): LTV dollars attributed per dollar of spend. "
+            f"There is a {baseline['iroas_below_breakeven_pct']:.0f}% chance this channel is below the 1.0x break-even line."
         )
 
 # ── Row 2: Time series ───────────────────────────────────────────────────────
@@ -323,9 +337,10 @@ with tab_ltv:
 st.markdown("---")
 st.markdown("#### Saturation & Spend Efficiency")
 st.caption(
-    "These curves show how marginal efficiency (iCAC / iROAS) changes at different spend levels. "
-    "The vertical line marks the historical median weekly spend. Moving right means more spend → "
-    "diminishing returns (higher iCAC, lower iROAS)."
+    "These curves show how the cost and return of the **next** dollar of spend (marginal "
+    "efficiency) change at different spend levels. The vertical line marks the typical (median) "
+    "weekly spend. Moving right means more spend and diminishing returns: higher cost per "
+    "customer (iCAC), lower return (iROAS)."
 )
 
 sat_col1, sat_col2 = st.columns(2)
@@ -354,8 +369,8 @@ st.plotly_chart(
 st.markdown("---")
 st.info(
     "**Want a cross-channel comparison?** Open the **Decisioning Summary** page "
-    "in the left sidebar — 19-row sortable table with the 8-column M5 decisioning "
-    "framework Abheek approved on 2026-05-12."
+    "in the left sidebar: a 19-row sortable table with the 8-column decisioning "
+    "framework your team approved on 2026-05-12."
 )
 
 # ── Footer ───────────────────────────────────────────────────────────────────
@@ -364,5 +379,5 @@ st.caption(
     f"**Data window:** {conv['weekly_obs']} weeks | "
     f"**Channels in model:** {conv['n_channels']} | "
     f"**avg LTV per customer:** ${baseline['avg_ltv']:,.2f} | "
-    f"**Canonical:** `{CANONICAL_VERSION}`"
+    f"**Model version:** May 2026 calibration"
 )

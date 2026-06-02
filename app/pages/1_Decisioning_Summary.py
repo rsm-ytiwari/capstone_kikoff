@@ -1,16 +1,17 @@
 """
-1_Decisioning_Summary.py — 19-row decisioning table (M5 template, approved by
-Abheek 2026-05-12).
+1_Decisioning_Summary.py — 19-row decisioning table (client-approved template,
+2026-05-12).
 
-Columns (per the M5 template Abheek approved):
+Columns:
   A · Channel               display name from CHANNEL_DISPLAY
   B · Spend Signal          Very High / High / Medium / Low from weekly spend share
-  C · iCAC / Trend          windowed (tested) or aggregate (untested) + 5WK/26WK trend
-  D · iROAS Trend           baseline iROAS + 5WK/26WK trend + % below break-even
-  E · Confidence (Trust)    HIGH / CAUTION / LOW per D015 rule
-  F · Saturation Read       Past sat / Approaching / Headroom from sat-curve slope
+  C · Cost/Customer + Trend windowed (tested) or aggregate (untested) + 5wk/26wk trend
+  D · Return + Trend        baseline iROAS + 5wk/26wk trend + % below break-even
+  E · Confidence (Trust)    HIGH / CAUTION / LOW
+  F · Saturation Read       Past sat / Approaching / Headroom (average-cost basis;
+                            see note under the table re: marginal vs average)
   G · Recommended Action    default "Hold pending guardrails or incrementality proof"
-  H · Spend Move to Test    "Review pending" placeholder (NOT client-facing until approved)
+  H · Spend Move to Test    "Review pending" placeholder (not a final recommendation)
 
 Lift-tested channels (7) are listed first; untested (12) follow. Sortable.
 Export as CSV via the button at the bottom.
@@ -32,16 +33,18 @@ from app.data_loader import (
 )
 
 st.set_page_config(
-    page_title="Decisioning Summary — Kikoff MMM",
+    page_title="Decisioning Summary · Kikoff MMM",
     page_icon="📋",
     layout="wide",
 )
 
-st.markdown("# Decisioning Summary — 19 Channels")
+st.markdown("# Decisioning Summary: 19 Channels")
 st.caption(
-    "8-column decisioning framework (M5 template, approved by Abheek 2026-05-12). "
-    "Lift-tested channels are listed first (windowed iCAC vs experimental truth); "
-    "untested channels follow (aggregate iCAC). "
+    "8-column decisioning framework (approved by your team 2026-05-12). "
+    "Lift-tested channels are listed first (cost per acquired customer measured during each "
+    "channel's experiment window, vs the experiment result); untested channels follow "
+    "(all-history average). All cost and return figures are from the **LTV model**; "
+    "conversion-model accuracy is on the Out-of-Time page. "
     "Column G default: *Hold on to any changes unless documents and guardrails are in place or proved by incrementality.*"
 )
 
@@ -74,17 +77,17 @@ def _saturation_read(icac_sat_df: pd.DataFrame, median_spend: float, observed_ma
     if not (np.isfinite(icac_at_median) and np.isfinite(icac_at_max) and icac_at_median > 0):
         return "Insufficient data"
     ratio = icac_at_max / icac_at_median
-    if ratio > 1.5:  return f"Past saturation (×{ratio:.1f} iCAC at obs-max vs median)"
+    if ratio > 1.5:  return f"Past saturation (×{ratio:.1f} avg cost at peak vs typical spend)"
     if ratio > 1.2:  return f"Approaching saturation (×{ratio:.1f})"
-    return f"Headroom (×{ratio:.2f} — near-linear)"
+    return f"Headroom (×{ratio:.2f}, near-linear)"
 
 
 def _confidence(is_tested: bool, gate_pass: bool, hdi_span_ratio: float) -> str:
-    """D015-style confidence label."""
-    if not is_tested:                       return "🔴 LOW — no lift test"
-    if gate_pass and hdi_span_ratio < 0.5:  return "🟢 HIGH — gate PASS, tight posterior"
-    if gate_pass:                            return "🟡 CAUTION — gate PASS, wide posterior"
-    return "🔴 LOW — gate FAIL"
+    """Confidence (trust) label."""
+    if not is_tested:                       return "🔴 LOW: no experiment"
+    if gate_pass and hdi_span_ratio < 0.5:  return "🟢 HIGH: matches experiment, narrow range"
+    if gate_pass:                            return "🟡 CAUTION: matches experiment, wide range"
+    return "🔴 LOW: outside experiment band"
 
 
 def _avg_last_weeks(df: pd.DataFrame, weeks: int) -> float:
@@ -145,31 +148,31 @@ for ch in CHANNELS_AVAILABLE:
         truth = base["windowed_iCAC_truth"]
         tol   = base["windowed_iCAC_tol"]
         c_str = (
-            f"Windowed ${base['windowed_iCAC']:.0f} "
-            f"(truth ${truth:.0f}±${tol:.0f}, {'PASS' if base['windowed_gate_pass'] else 'FAIL'}) · "
-            f"5WK ${icac_5:,.0f} vs 26WK ${icac_26:,.0f} ({icac_delta:+.0f}%)"
+            f"Experiment-window ${base['windowed_iCAC']:.0f} "
+            f"(target ${truth:.0f}±${tol:.0f}, {'in band' if base['windowed_gate_pass'] else 'outside'}) · "
+            f"last 5wk ${icac_5:,.0f} vs last 26wk ${icac_26:,.0f} ({icac_delta:+.0f}%)"
         )
     else:
         c_str = (
-            f"Aggregate ${base['agg_iCAC_script09']:.0f} (no lift test) · "
-            f"5WK ${icac_5:,.0f} vs 26WK ${icac_26:,.0f} ({icac_delta:+.0f}%)"
+            f"All-history avg ${base['agg_iCAC_script09']:.0f} (no experiment) · "
+            f"last 5wk ${icac_5:,.0f} vs last 26wk ${icac_26:,.0f} ({icac_delta:+.0f}%)"
         )
 
     d_str = (
-        f"Baseline {base['iroas_mean']:.3f}x · "
-        f"5WK {iroas_5:.3f}x vs 26WK {iroas_26:.3f}x ({iroas_delta:+.0f}%) · "
-        f"{base['iroas_below_breakeven_pct']:.0f}% below 1.0×"
+        f"Return {base['iroas_mean']:.3f}x · "
+        f"last 5wk {iroas_5:.3f}x vs last 26wk {iroas_26:.3f}x ({iroas_delta:+.0f}%) · "
+        f"{base['iroas_below_breakeven_pct']:.0f}% chance below 1.0x break-even"
     )
 
     rows.append({
-        "A · Channel":              CHANNEL_DISPLAY[ch],
-        "B · Spend Signal":         f"{sig} ({share_pct:.1f}% of total)",
-        "C · iCAC / Trend":         c_str,
-        "D · iROAS Trend":          d_str,
-        "E · Confidence (Trust)":   conf,
-        "F · Saturation Read":      sat,
-        "G · Recommended Action":   "Hold pending guardrails or incrementality proof",
-        "H · Spend Move to Test":   "Review pending",
+        "A · Channel":                          CHANNEL_DISPLAY[ch],
+        "B · Spend Signal":                     f"{sig} ({share_pct:.1f}% of total)",
+        "C · Cost/Customer (iCAC) + Trend":     c_str,
+        "D · Return (iROAS) + Trend":           d_str,
+        "E · Confidence (Trust)":               conf,
+        "F · Saturation Read (avg-cost basis)": sat,
+        "G · Recommended Action":               "Hold pending guardrails or incrementality proof",
+        "H · Spend Move to Test":               "Review pending",
     })
 
 
@@ -181,15 +184,20 @@ st.dataframe(
     use_container_width=True,
     hide_index=True,
     column_config={
-        "A · Channel":            st.column_config.TextColumn(width="small"),
-        "B · Spend Signal":       st.column_config.TextColumn(width="small"),
-        "C · iCAC / Trend":       st.column_config.TextColumn(width="large"),
-        "D · iROAS Trend":        st.column_config.TextColumn(width="large"),
-        "E · Confidence (Trust)": st.column_config.TextColumn(width="medium"),
-        "F · Saturation Read":    st.column_config.TextColumn(width="medium"),
-        "G · Recommended Action": st.column_config.TextColumn(width="medium"),
-        "H · Spend Move to Test": st.column_config.TextColumn(width="small"),
+        "A · Channel":                          st.column_config.TextColumn(width="small"),
+        "B · Spend Signal":                     st.column_config.TextColumn(width="small"),
+        "C · Cost/Customer (iCAC) + Trend":     st.column_config.TextColumn(width="large"),
+        "D · Return (iROAS) + Trend":           st.column_config.TextColumn(width="large"),
+        "E · Confidence (Trust)":               st.column_config.TextColumn(width="medium"),
+        "F · Saturation Read (avg-cost basis)": st.column_config.TextColumn(width="medium"),
+        "G · Recommended Action":               st.column_config.TextColumn(width="medium"),
+        "H · Spend Move to Test":               st.column_config.TextColumn(width="small"),
     },
+)
+st.caption(
+    "**Column F basis:** this reading uses **average** cost per customer across spend levels. "
+    "The per-channel saturation curves on the main dashboard show the **next-dollar (marginal)** "
+    "view, which can read as more saturated. Treat Column F as a directional, average-cost flag."
 )
 
 # ── CSV export ───────────────────────────────────────────────────────────────
@@ -203,15 +211,16 @@ st.download_button(
 
 # ── Footer ───────────────────────────────────────────────────────────────────
 st.markdown("---")
-n_tested = sum(1 for r in rows if "Windowed" in r["C · iCAC / Trend"])
+_c_key = "C · Cost/Customer (iCAC) + Trend"
+n_tested = sum(1 for r in rows if "Experiment-window" in r[_c_key])
 n_passing = sum(
     1 for r in rows
-    if "Windowed" in r["C · iCAC / Trend"] and "PASS)" in r["C · iCAC / Trend"]
+    if "Experiment-window" in r[_c_key] and "in band)" in r[_c_key]
 )
 st.caption(
-    f"**Canonical:** `{CANONICAL_VERSION}` · "
     f"**Total channels:** {len(rows)} · "
-    f"**Lift-tested:** {n_tested} ({n_passing}/{n_tested} windowed gates PASS) · "
+    f"**Lift-tested:** {n_tested} ({n_passing}/{n_tested} match the experiment band) · "
     f"**Untested:** {len(rows) - n_tested}. "
-    f"Columns G and H are placeholders pending review — not client-facing assertions."
+    f"Columns G and H are placeholders pending review, not final recommendations. "
+    f"Model version: May 2026 calibration."
 )

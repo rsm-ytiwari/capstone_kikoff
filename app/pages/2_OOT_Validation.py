@@ -1,9 +1,8 @@
 """
 2_OOT_Validation.py — Out-of-Time validation page (M7 + D028).
 
-Anchor: Abheek 2026-05-12 (37:38): "for MMM, I largely care on the out of
-time validation. Like how closely is it able to predict the conversion
-numbers."
+Anchor: client 2026-05-12: out-of-time validation (how closely the model predicts
+held-out weekly conversions) is the primary MMM validation metric.
 
 Asymmetric architecture (D028, 2026-05-20):
   Model 1 (y=CONVERSIONS) uses D-γ — linear trend control_columns=["t"],
@@ -33,19 +32,17 @@ from app.data_loader import CANONICAL_VERSION, load_oot
 from app.charts import CONFIG, fig_oot_predicted_vs_actual
 
 st.set_page_config(
-    page_title="OOT Validation — Kikoff MMM",
+    page_title="Out-of-Time Validation · Kikoff MMM",
     page_icon="🎯",
     layout="wide",
 )
 
-st.markdown("# Out-of-Time Validation — 13-week Hold-out")
+st.markdown("# Out-of-Time Validation: 13-week Hold-out")
 st.caption(
-    "*Abheek 2026-05-12: \"for MMM, I largely care on the out of time validation. "
-    "Like how closely is it able to predict the conversion numbers.\"* "
-    f"Base canonical: `{CANONICAL_VERSION}` (Lever C lam Gamma(2,2) + HalfNormal(2) β, "
-    "GeometricAdstock l_max=8, Fix-A windowed lift priors). "
-    "**D028 (2026-05-20):** Model 1 OOT uses asymmetric D-γ linear trend control (`control_columns=['t']`); "
-    "Model 2 OOT stays at base canonical. Per-model stamps in the Configuration & methodology footnote."
+    "Out-of-time validation asks the key MMM question: how closely does the model predict "
+    "weeks it never trained on? We hold out the most recent 13 weeks, fit on everything before, "
+    "and compare predictions to what actually happened. "
+    "The conversions model and the LTV (revenue) model are validated separately below."
 )
 
 # ── Load both models ─────────────────────────────────────────────────────────
@@ -54,12 +51,9 @@ try:
     m2_metrics, m2_ts = load_oot("m2")
 except FileNotFoundError as e:
     st.error(
-        "OOT outputs not found. Run `scripts/11_oot_validation.py` first to "
-        "generate them. Expected at "
-        "`outputs/P2_04_full_channel/metrics/oot_model{1,2}_*.json` + "
-        "`outputs/P2_04_full_channel/charts/oot_model{1,2}_*_timeseries.csv`."
+        "Out-of-time validation outputs are not available yet. Please refresh once the "
+        "latest model outputs have been published."
     )
-    st.exception(e)
     st.stop()
 
 
@@ -78,72 +72,69 @@ split  = m1_metrics["split"]
 st.markdown("### Hold-out performance")
 k1, k2, k3, k4 = st.columns(4)
 k1.metric(
-    f"M1 · Conversions MAPE {_mape_color(m1_oot['mape_pct'])}",
+    f"Conversions model: avg error {_mape_color(m1_oot['mape_pct'])}",
     f"{m1_oot['mape_pct']:.1f}%",
-    help=(f"Posterior-mean weekly conversions vs actual, averaged across "
-          f"{split['n_test_weeks']} hold-out weeks. sMAPE: {m1_oot['smape_pct']:.1f}%. "
-          f"89% HDI coverage: {m1_oot['hdi_89_coverage_pct']:.0f}%."),
+    help=(f"Average percent error (MAPE) of predicted weekly conversions vs actual, across "
+          f"{split['n_test_weeks']} hold-out weeks. Symmetric version: {m1_oot['smape_pct']:.1f}%."),
 )
 k2.metric(
-    "M1 · MAE (conversions / week)",
+    "Conversions model: avg miss (per week)",
     f"{m1_oot['mae']:,.0f}",
-    help=f"RMSE: {m1_oot['rmse']:,.0f}",
+    help=f"Average size of the weekly miss, in conversions.",
 )
 k3.metric(
-    f"M2 · LTV_3YEAR MAPE {_mape_color(m2_oot['mape_pct'])}",
+    f"LTV model: avg error {_mape_color(m2_oot['mape_pct'])}",
     f"{m2_oot['mape_pct']:.1f}%",
-    help=(f"Posterior-mean weekly LTV dollars vs actual, averaged across "
-          f"{split['n_test_weeks']} hold-out weeks. sMAPE: {m2_oot['smape_pct']:.1f}%. "
-          f"89% HDI coverage: {m2_oot['hdi_89_coverage_pct']:.0f}%."),
+    help=(f"Average percent error (MAPE) of predicted weekly LTV dollars vs actual, across "
+          f"{split['n_test_weeks']} hold-out weeks. Symmetric version: {m2_oot['smape_pct']:.1f}%."),
 )
 k4.metric(
-    "M2 · MAE ($ / week)",
+    "LTV model: avg miss ($ / week)",
     f"${m2_oot['mae']:,.0f}",
-    help=f"RMSE: ${m2_oot['rmse']:,.0f}",
+    help=f"Average size of the weekly miss, in dollars.",
 )
 
 st.caption(
-    "🟢 < 15% MAPE (strong) · 🟡 15–25% (acceptable for MMM) · 🔴 > 25% (poor generalization)."
+    "Average error (MAPE): 🟢 under 15% (strong) · 🟡 15–25% (acceptable for MMM) · 🔴 over 25% (poor)."
 )
 
 # ── Split summary ────────────────────────────────────────────────────────────
 st.markdown(
     f"**Training:** `{split['train_start']}` → `{split['train_end']}` "
-    f"({split['n_train_weeks']} W-MON weeks) · "
+    f"({split['n_train_weeks']} weeks) · "
     f"**Hold-out:** `{split['test_start']}` → `{split['test_end']}` "
-    f"({split['n_test_weeks']} W-MON weeks)"
+    f"({split['n_test_weeks']} weeks)"
 )
 
-# ── Model 1 chart ────────────────────────────────────────────────────────────
-st.markdown("### Model 1 — Weekly conversions (predicted vs actual) · D-γ trend control (D028)")
+# ── Conversions model chart ──────────────────────────────────────────────────
+st.markdown("### Conversions model: weekly conversions (predicted vs actual)")
 fig_m1 = fig_oot_predicted_vs_actual(
     m1_ts,
-    title=("Model 1 · y = CONVERSIONS · D-γ trend control (D028)<br>"
-           "<sub>Posterior mean + 89% HDI vs actual, 13-week hold-out</sub>"),
+    title=("Conversions model: predicted vs actual<br>"
+           "<sub>Prediction + credible range vs actual, 13-week hold-out</sub>"),
     y_label="Weekly conversions",
     dollar_axis=False,
 )
 st.plotly_chart(fig_m1, use_container_width=True, config=CONFIG)
 
-# ── Model 2 chart ────────────────────────────────────────────────────────────
-st.markdown("### Model 2 — Weekly LTV_3YEAR (predicted vs actual) · base canonical")
+# ── LTV model chart ──────────────────────────────────────────────────────────
+st.markdown("### LTV (revenue) model: weekly LTV (predicted vs actual)")
 fig_m2 = fig_oot_predicted_vs_actual(
     m2_ts,
-    title=("Model 2 · y = LTV_3YEAR · M3.5b Fix-A base canonical<br>"
-           "<sub>Posterior mean + 89% HDI vs actual, 13-week hold-out (dollars)</sub>"),
-    y_label="Weekly LTV_3YEAR ($)",
+    title=("LTV (revenue) model: predicted vs actual<br>"
+           "<sub>Prediction + credible range vs actual, 13-week hold-out (dollars)</sub>"),
+    y_label="Weekly LTV ($)",
     dollar_axis=True,
 )
 st.plotly_chart(fig_m2, use_container_width=True, config=CONFIG)
 
 st.info(
-    "**Model 2 documented limitation (D028 Option α, 2026-05-20):** Model 2 systematically "
-    "over-predicts weekly LTV in all 13 hold-out weeks by ~5–25%/week (signed mean +14.96%). "
-    "Two architectural remedies tested under Q34 — D-γ trend control (over-corrected M2 to −14%) "
-    "and D-ε (asymmetric per-window lift priors + post-multiply; pushed M2 further over). "
-    "Both ruled out as cleanly improving M2 without trade-off. M2 OOT MAPE 15.13% remains inside "
-    "the industry-acceptable 15–25% MMM band; Model 2 is published with this documented bias rather "
-    "than an architectural fix that trades systematic over-prediction for week-to-week noise."
+    "**Known limitation of the LTV model:** it tends to run a little high, over-predicting "
+    "weekly LTV in all 13 hold-out weeks by roughly 5–25% (about +15% on average). "
+    "Two model changes were tested to remove this; both over-corrected or shifted the bias "
+    "elsewhere, so neither was a clean win. The LTV model's average error of 15.1% still sits "
+    "inside the industry-acceptable 15–25% range for MMM, so we publish it with this bias "
+    "documented rather than trading a consistent over-prediction for noisier week-to-week swings."
 )
 
 
@@ -167,7 +158,7 @@ def _error_table(ts: pd.DataFrame, dollar: bool) -> pd.DataFrame:
 with st.expander("Per-week error tables + CSV downloads", expanded=False):
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown("**Model 1 — Conversions**")
+        st.markdown("**Conversions model**")
         df1 = _error_table(m1_ts, dollar=False)
         st.dataframe(df1, use_container_width=True, hide_index=True)
         st.download_button(
@@ -177,7 +168,7 @@ with st.expander("Per-week error tables + CSV downloads", expanded=False):
             mime="text/csv",
         )
     with c2:
-        st.markdown("**Model 2 — LTV_3YEAR**")
+        st.markdown("**LTV (revenue) model**")
         df2 = _error_table(m2_ts, dollar=True)
         st.dataframe(df2, use_container_width=True, hide_index=True)
         st.download_button(
@@ -189,41 +180,31 @@ with st.expander("Per-week error tables + CSV downloads", expanded=False):
 
 # ── Configuration footnote ───────────────────────────────────────────────────
 with st.expander("Configuration & methodology", expanded=False):
-    m1_canon_stamp = m1_metrics.get("canonical_version", CANONICAL_VERSION)
-    m2_canon_stamp = m2_metrics.get("canonical_version", CANONICAL_VERSION)
     st.markdown(f"""
-**Base canonical:** `{CANONICAL_VERSION}` (M3.5b Fix-A, post-D027). Lever C lam
-Gamma(2,2) + HalfNormal(2) β, GeometricAdstock l_max=8.
+**Model setup (both models):** Bayesian Marketing Mix Model (PyMC-Marketing) with a
+saturation curve per channel (diminishing returns), an adstock carryover of up to 8 weeks,
+and historical incrementality experiments used as priors within each test window.
 
-**Asymmetric OOT architecture (D028, 2026-05-20):**
-- **Model 1 OOT stamp:** `{m1_canon_stamp}` — D-γ trend control `control_columns=["t"]`
-  with default `Normal(0, 2)` prior on gamma_control. Produced by
-  `scripts/11b_oot_validation_M1_D_gamma.py`. Accepted-cost: M1 meta_web windowed
-  iCAC drifts $32.90 internally — NOT surfaced on Decisioning Summary or main
-  dashboard (those read Model 2 only).
-- **Model 2 OOT stamp:** `{m2_canon_stamp}` — base canonical, no trend control.
-  Produced by `scripts/11_oot_validation.py`. +14.96% one-directional OOT
-  over-prediction accepted as documented limitation per Option α.
+**Why the two models differ in the hold-out:** the conversions model adds a gentle
+straight-line time trend, which keeps its predictions on track over the hold-out weeks.
+The LTV (revenue) model does not, because revenue per customer rises in the hold-out in a
+way that partly offsets the conversion trend; adding a single trend there over-corrects.
+This is why the conversions model lands close to actuals while the LTV model runs a little high.
 
-**Model 1 convergence:** R-hat={m1_metrics['convergence']['rhat_max']},
-ESS={m1_metrics['convergence']['ess_min']:.0f},
-divergences={m1_metrics['convergence']['divergences']}.
+**How well the models settled (technical):**
+- Conversions model: convergence R-hat = {m1_metrics['convergence']['rhat_max']}
+  (want < 1.1), effective samples = {m1_metrics['convergence']['ess_min']:.0f} (want > 400),
+  divergences = {m1_metrics['convergence']['divergences']}.
+- LTV model: convergence R-hat = {m2_metrics['convergence']['rhat_max']},
+  effective samples = {m2_metrics['convergence']['ess_min']:.0f},
+  divergences = {m2_metrics['convergence']['divergences']}.
+  Training-period average LTV per customer = ${m2_metrics.get('avg_ltv_train', 0):,.2f}.
 
-**Model 2 convergence:** R-hat={m2_metrics['convergence']['rhat_max']},
-ESS={m2_metrics['convergence']['ess_min']:.0f},
-divergences={m2_metrics['convergence']['divergences']}.
-Training-period avg LTV/customer = ${m2_metrics.get('avg_ltv_train', 0):,.2f}.
-
-**OOS prediction API** (PyMC-Marketing 0.19.x canonical):
-`mmm.sample_posterior_predictive(X_test, extend_idata=False,
-include_last_observations=True, var_names=["y_original_scale"], random_seed=42)`.
-
-**Lift tests in training** (per Fix-A LIFT_TESTS_CONV table, DP-D Option 3
-APPROVED 2026-05-19):
+**Incrementality experiments used as priors during training:**
 """)
     lift_df = pd.DataFrame(m1_metrics.get("lift_tests_in_training", []))
     if not lift_df.empty:
         st.dataframe(lift_df, use_container_width=True, hide_index=True)
-    st.markdown(f"""
-**DP-D leak note:** {m1_metrics.get("lift_test_leak_note", "")}
-""")
+    leak_note = m1_metrics.get("lift_test_leak_note", "")
+    if leak_note:
+        st.caption(f"Note on experiment timing vs hold-out: {leak_note}")

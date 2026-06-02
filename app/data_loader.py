@@ -45,7 +45,7 @@ CHANNEL_DISPLAY = {
     "others":           "Others",
 }
 
-# Sequencing per Abheek meeting-6 fact 28: lift-tested channels first.
+# Sequencing per client meeting-6 fact 28: lift-tested channels first.
 CHANNELS_LIFT_TESTED = [
     "meta_ios", "meta_android", "meta_web",
     "tiktok_ios", "tiktok_android", "tiktok_web",
@@ -159,7 +159,7 @@ def load_baseline_split() -> dict:
     Produced by scripts/15_baseline_split.py from the canonical M2 trace.
     Schema: aggregate (in_window_baseline_pct, out_window_baseline_pct, …),
     per_channel (7 lift-tested channels with concentration_ratio_in_over_out),
-    reference (Abheek organic anchor + apples-to-apples band).
+    reference (client organic anchor + apples-to-apples band).
     """
     p = _METRIC_DIR / "baseline_split.json"
     with open(p) as f:
