@@ -1,0 +1,263 @@
+---
+title: "Phase 2 Update — Calibration, OOT Validation & Baseline Reframe"
+subtitle: "Kikoff MMM · Meeting 7 · 2026-05-21"
+date: 2026-05-21
+author: "Data Science Team"
+format:
+  revealjs:
+    css: custom-reveal.css
+    slide-number: true
+    theme: default
+    transition: none
+    width: 1280
+    height: 800
+    center: false
+    scrollable: true
+    embed-resources: true
+    execute:
+      echo: false
+      warning: false
+---
+
+## Where we are {.smaller}
+
+| Area | State |
+|---|---|
+| Lift-test calibration | **5 of 7 channels in band** (was 2 of 7). Meta Web $276 — inside your $275–$300 hunch, $69 above the lift-test upper. TikTok iOS $288 vs truth $109 — new miss the corrected gate surfaced. |
+| Out-of-time validation | Built. **Model 1 MAPE 16.13%** under a trend control. **Model 2 MAPE 15.13%** with a **+14.96% one-directional over-prediction** we document as a known limitation. |
+| Baseline | **67% global.** Decomposes into ~35% organic LTV + ~32pp paid attribution our regressors can't see (largely Meta Web view-through). On the attributed-revenue universe, baseline lands **~50% (45–53% band)**. |
+| Convergence | R-hat ≤ 1.005, ESS ≥ 2,094, zero divergences across all canonical fits. |
+| Dashboard | 19 channels, three pages (Decisioning Summary, OOT Validation, Methodology). Live walkthrough later in this meeting. |
+
+**Two blocking questions and three judgment calls for today.** Both blocking questions affect what the calibration story looks like at Phase 2 close.
+
+---
+
+## How Meta Web moved from $652 to $276 — and the catch {.smaller}
+
+Two steps. The first is what you'd expect. The second is what we caught.
+
+**Step 1 — σ tightening + windowed gate.** Narrowed Meta and TikTok lift-test priors from 30% of point estimate to ~10% (CLS literature default). Re-included Meta Jan 2026 as a wide-prior windowed test. Switched the gate from full-history aggregate to in-window. Meta Web moved **$652 → $466.** Convergence improved sharply (divergences 35 → 0, effective samples 268 → 2,218). Three independent diagnostics — prior-strength ladder, alternative saturation curve, alternative saturation prior — all landed at $466 ± $7. Prior tightness wasn't the residual driver.
+
+**Step 2 — window-basis correction.** Worked the gate arithmetic by hand. The gate was comparing the model's **14-day weekly-rollup window spend** ($508,038) against the lift test's **8-day Δy** (1,128 conversions). Mechanically $450 — the model had no degrees of freedom to disagree. On a consistent basis the implied "true" iCAC becomes $257, and the residual gap collapses to ~$10–$70.
+
+Applied the correction (scale each test's Δy and σ by `window days / test days`). Meta Web moved **$466 → $281 (Model 1) / $276 (Model 2).**
+
+The honest read: a meaningful chunk of what looked like a calibration miss after Step 1 was an arithmetic basis error we owned. Step 2 is what closed it.
+
+---
+
+## Lift-tested channel results — post-calibration {.smaller}
+
+Model 2 (LTV_3YEAR), windowed iCAC vs lift-test truth.
+
+| Channel | Truth band | Windowed iCAC | Pre-calibration → Post | Status |
+|---|---|---|---|---|
+| meta_ios | $85 – $185 | **$137** | $230 → $137 | PASS |
+| meta_android | $13 – $113 | **$85** | $147 → $85 | PASS |
+| meta_web | $107 – $207 | **$276** | $652 → $466 → $276 | **Narrow miss** ($69 above upper; inside safety band $107–$300) |
+| tiktok_ios | $59 – $159 | **$288** | (new visibility) | **Miss** ($129 above upper) — surfaced by the corrected gate |
+| tiktok_android | $32 – $132 | **$111** | (new) | PASS |
+| tiktok_web | $62 – $162 | **$135** | $155 → $135 | PASS |
+| ctv | $120 – $150 | **$139** | (was already close) | PASS |
+
+**5 of 7 in band** (was 2 of 7). Convergence clean: R-hat ≤ 1.005, ESS ≥ 2,094, zero divergences.
+
+The two misses are different in kind. Meta Web's residual lines up with a view-through mechanism (next section). TikTok iOS has an *inverse* concentration ratio (0.79x — contributes more outside its test window than during it), which reads as a pacing confound, not a prior-tightness issue.
+
+---
+
+## Out-of-time validation — architecture + Model 1 {.smaller}
+
+Trained on the first 79 weeks (2024-07-01 → 2025-12-29). Held out the last 13 (2026-01-05 → 2026-03-30). Computed weekly posterior-predictive against actuals.
+
+**Why we ended up with an asymmetric architecture.** Model 1 has one OOT drift — conversion volume plateaued in 2026 Q1 while the linear projection has it growing. A single linear trend control corrects it. Model 2 has two divergent drifts — same plateau, plus a sustained +4% elevation in LTV-per-conversion that *offsets* the plateau, not compounds it. One coefficient cannot disentangle both. So: Model 1 gets the trend control; Model 2 stays on the calibrated spec with its bias disclosed.
+
+**Model 1 result (with trend control on the OOT fit only):**
+
+| MAPE | sMAPE | Signed mean | Over-pred weeks | HDI89 cov | R-hat | ESS |
+|---|---|---|---|---|---|---|
+| **16.13%** | 16.41% | **−3.66%** | **4 of 13** | **38.5%** | 1.0056 | 1,208 |
+
+Inside the industry MMM 15–25% band. Sign flipped from the pre-fix +18.83%, magnitude inside ±5%. HDI coverage up from 7.7% to 38.5%.
+
+*Caveat we want to surface up front:* adding the trend control shifted Model 1's Meta Web iCAC by ~$33 (12% of canonical). Published windowed iCACs are point estimates inside a ~±$30 band under realistic spec variation. We're being conservative about how tightly any single number should be read.
+
+---
+
+## Out-of-time validation — Model 2, honest finding {.smaller}
+
+Same train/test split. Canonical specification preserved (no trend control). Live chart on the dashboard's OOT Validation page.
+
+| MAPE | sMAPE | Signed mean | Over-pred weeks | HDI89 cov | R-hat | ESS |
+|---|---|---|---|---|---|---|
+| **15.13%** | 13.84% | **+14.96%** | **12 of 13** | 7.7% | 1.0036 | 2,098 |
+
+MAPE inside band. Signed bias is one-directional and **outside** the 89% predictive interval most weeks — the model's own uncertainty doesn't contain its own bias.
+
+**Why we kept this as canonical.** Every remedy we tested traded one problem for another:
+
+- The same trend control that fixes Model 1 over-corrects Model 2 — signed bias flips sign, keeps magnitude (−14.00%).
+- A two-stage architecture (project Model 2 from Model 1's conversions × elevated LTV-per-conv) closes signed bias to −4.59% but MAPE worsens to 16.5% and HDI coverage drops to 0%.
+- Per-window prior rescaling — same trade-offs.
+
+The choice was between a known-direction bias inside the MAPE band and a noisier prediction with worse coverage. We picked the version that documents the bias openly and leaves Model 2's posterior-predictive intact.
+
+The +14.96% reflects an LTV-per-conversion elevation in 2026 Q1 the training data couldn't see. Closing it cleanly needs the attribution scope discussed in the asks.
+
+---
+
+## Baseline — why 67% didn't drop the way you predicted {.smaller}
+
+You expected: tighter Meta Web priors → attribution pulls into the channel → baseline drops. It didn't (3pp drop, not material). Here's what's actually happening.
+
+| | Value |
+|---|---|
+| Global baseline (Model 2, 93 weeks) | **67.33%** |
+| In-window (12 union weeks across all lift tests) | 61.32% |
+| Out-of-window (81 weeks) | 68.32% |
+| Δ in vs out | **7 pp only** — modest windowing effect |
+
+**The decomposition.** Per your Meeting 6 comment that Northbeam's attributed-revenue universe is ~65% of total revenue:
+
+- **~35% irreducible organic LTV.** Paid attribution mechanisms can't reach it. Our model is fit on total LTV, so this share lives in baseline by construction.
+- **~32 pp missed paid attribution.** Largely Meta Web view-through credit. The lift prior shifted Meta Web's iCAC level ($466 → $281), but did not redistribute attribution into the test window — the spend-to-conversion coupling is view-through-mediated and invisible to our regressors.
+
+The <20% target was framed against the attributed-revenue universe. Different scope from total LTV. By construction, the model can't reach it on the data it's fit on today.
+
+---
+
+## Per-channel concentration + apples-to-apples baseline {.smaller}
+
+Per-channel concentration ratio = (in-window $/wk) ÷ (out-of-window $/wk). Surfaces what each channel's lift prior is actually doing.
+
+| Channel | Ratio | Read |
+|---|---:|---|
+| **meta_ios** | **2.35x** | Well-fit — prior bites *and* redistributes attribution into the window |
+| tiktok_web | 1.61x | Moderate |
+| meta_android | 1.56x | Moderate |
+| ctv | 1.11x | Slight concentration |
+| **meta_web** | **1.04x** | Flat — level shifted $466 → $281 but attribution did not redistribute. The view-through fingerprint. |
+| tiktok_android | 0.96x | Flat |
+| **tiktok_ios** | **0.79x** | **Inverse** — channel contributes *more* outside its window than during. Pacing confound, not prior-tightness. |
+
+Meta Web's 1.04x is the in-model fingerprint of your own Meeting 6 diagnosis — view-through credit invisible to the regressors. Reviewer challenge we want to acknowledge: the saturation curve or the windowed prior shape itself can also produce a flat ratio. View-through is the most likely mechanism but not the only one consistent with 1.04x.
+
+**Apples-to-apples baseline on the attributed-revenue universe (the scope your target was framed against):**
+
+| Assumed organic | Baseline on attributed universe |
+|---|---|
+| 30% | 53.33% |
+| **35% (your Meeting 6 anchor)** | **49.74%** |
+| 40% | 45.55% |
+
+Cite as a band — **~50% point, 45–53% range**. Still above 20%; the gap is the missed-paid-attribution component, not a model-spec issue.
+
+---
+
+## Dashboard — switching live {.smaller}
+
+`http://localhost:8501` — three pages, 19 channels.
+
+| Page | What's on it |
+|---|---|
+| **Home (single-channel drill-down)** | Baseline iCAC card (posterior + truth band overlay), iROAS card, time-series tabs, saturation curve, model-health strip |
+| **Decisioning Summary** | 19-row table — lift-tested seven at top with windowed iCAC vs truth, untested twelve below with aggregate iCAC. Sortable on every column. CSV export. |
+| **OOT Validation** | Model 1 + Model 2 prediction charts (89% HDI band vs actuals), KPI strip, per-week error tables |
+| **Methodology** | Baseline decomposition, per-channel concentration table, view-through mechanism, attribution-feed ask |
+
+Live walkthrough sequence: meta_ios baseline iCAC card → Decisioning Summary (full table) → OOT Validation (the two charts) → Methodology.
+
+Static screenshots of the same three pages follow these slides as a fallback.
+
+---
+
+## Fallback — Decisioning Summary {.smaller}
+
+![Decisioning Summary — 19 channels, 8-column decisioning framework](assets/dashboard_screenshots/decisioning_summary.png)
+
+---
+
+## Fallback — OOT Validation {.smaller}
+
+![Out-of-time validation — Model 1 (left) and Model 2 (right), 13-week hold-out](assets/dashboard_screenshots/oot_validation.png)
+
+---
+
+## Fallback — Methodology {.smaller}
+
+![Methodology — baseline decomposition, per-channel concentration, view-through mechanism, data-scope ask](assets/dashboard_screenshots/methodology.png)
+
+---
+
+## Blocking — two questions we need answered today {.smaller}
+
+### 1. Attribution-feed access
+
+Can Kikoff share a Northbeam attributed-revenue CSV — weekly attributed LTV by channel, 2024-07 → 2026-03 (daily also fine, we'll aggregate)?
+
+- Refits the model on the same universe your <20% baseline target was framed against. Today's 67% isn't comparable to your target by construction.
+- ~1 sprint to refit and re-report on attributed scope. Inside Phase 2 deadline if data lands in the next ~5 days.
+- Cost of no answer: baseline conversation stays on the apples-to-oranges 67% number, with the ~50% reframe as our defensible estimate.
+
+### 2. May 2025 Meta Web lift-test spend-basis
+
+The CSV cell shows $176,972 over 8 days. Two interpretations:
+
+| | Implies | Empirical |
+|---|---|---|
+| **Option 1 (working assumption)** — channel-level Meta Web, 88%/12% treatment-vs-holdout | $276 stands | 8-day actual Meta Web spend $214,096 ÷ cell $176,972 = **1.21**, matches 1/0.88 = 1.14 |
+| Option 2 — one cell of a 3-cell platform test, 33% of platform spend | Requires ×3 scaling; Meta Web drops to **~$86** (over-corrected); calibration re-opens | Would expect ratio ≈ 3.0, not 1.21 |
+
+Evidence favors Option 1. We need your confirmation to lock it.
+
+---
+
+## Three judgment calls — your read shapes Phase 2 close {.smaller}
+
+### 1. Meta Web $69 above the truth-band upper
+
+Model at $276. Truth band $107–$207. Inside your safety range $107–$300. Diagnostic plans on file (saturation curve sensitivity, OVB from the 12 untested channels). Pursue further, or document and ship?
+
+### 2. TikTok iOS $288 vs truth $109
+
+Concentration ratio 0.79x (inverse) suggests pacing confound rather than a prior issue. Tightening TikTok iOS σ in isolation risks contaminating other channels' iCACs (we have evidence the ±$30 spec-variation band is real). Document as structural limitation, or attempt remediation?
+
+### 3. Model 2 +14.96% OOT over-prediction
+
+Inside the industry 15–25% MAPE band. One remediation slot held: Model 2 with both a trend control and an LTV-per-conv regressor. ~25 min of MCMC; carries a known calibration-noise risk on Model 2 iCACs. Try before freeze, or ship with the bias openly documented?
+
+---
+
+## Path to Phase 2 final {.smaller}
+
+Phase 2 deliverable freeze: **2026-06-06.** Critical-path items, in order:
+
+| Item | Dependency | Time |
+|---|---|---|
+| Attribution-feed decision | Today | If yes: ~5 days to refit |
+| Spend-basis confirmation | Today | None if Option 1; full re-do of Meta Web story if Option 2 |
+| Judgment calls (Meta Web, TikTok iOS, M2 OOT) | Today | Each affects ~2–3 days of scope |
+| Untested-channel (12 of 19) saturation diagnostics | Independent | ~3 days |
+| Decisioning Summary "Spend Move to Test" column | Needs your read on cadence + format | ~2 days once specified |
+| Phase 2 executive summary | Final | ~3 days |
+
+If both blocking questions resolve today, we have ~9 working days of headroom to absorb the judgment-call scope and ship the executive summary.
+
+---
+
+## Reference files {.smaller}
+
+| What | Where |
+|---|---|
+| Model 1 fit (y=CONVERSIONS) | `scripts/08b_mechanism2_more_tune.py` |
+| Model 2 fit (y=LTV_3YEAR) | `scripts/09_ltv_model.py` |
+| OOT — Model 1 (with trend control) | `scripts/11b_oot_validation_M1_D_gamma.py` |
+| OOT — Model 2 | `scripts/11_oot_validation.py` |
+| Baseline decomposition | `scripts/15_baseline_split.py` |
+| Model 1 canonical metrics | `outputs/P2_04_full_channel/metrics/mechanism2b_window_scaled.json` |
+| Model 2 canonical metrics | `outputs/P2_04_full_channel/metrics/ltv_window_scaled.json` |
+| OOT metrics — Model 1 | `outputs/P2_04_full_channel/metrics/oot_model1_conversions.json` |
+| OOT metrics — Model 2 | `outputs/P2_04_full_channel/metrics/oot_model2_ltv.json` |
+| Baseline decomposition metrics | `outputs/P2_04_full_channel/metrics/baseline_split.json` |
+| Dashboard | `app/dashboard.py`, `app/pages/` |

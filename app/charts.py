@@ -314,11 +314,21 @@ def fig_icac_saturation(df: pd.DataFrame, median_spend: float,
     observed_max = float(spend_df[spend_col].max()) if (spend_df is not None and not spend_df.empty) else float(df["spend"].max())
     x_cap = observed_max * 1.15
 
-    valid = df["icac_mean"].notna() & (df["spend"] <= x_cap)
+    # Primary = MARGINAL iCAC (cost of the next conversion); secondary = AVERAGE
+    # iCAC (cost over all spend). Fall back to average if a pre-marginal CSV is loaded.
+    has_marg = "icac_marginal_mean" in df.columns
+    prim_col = "icac_marginal_mean" if has_marg else "icac_mean"
+    valid = df[prim_col].notna() & (df["spend"] <= x_cap)
     x  = df.loc[valid, "spend"]
-    m  = df.loc[valid, "icac_mean"]
-    lo = df.loc[valid, "icac_lo95"]
-    hi = df.loc[valid, "icac_hi95"]
+    if has_marg:
+        m  = df.loc[valid, "icac_marginal_mean"]
+        lo = df.loc[valid, "icac_marginal_lo95"]
+        hi = df.loc[valid, "icac_marginal_hi95"]
+    else:
+        m  = df.loc[valid, "icac_mean"]
+        lo = df.loc[valid, "icac_lo95"]
+        hi = df.loc[valid, "icac_hi95"]
+    avg = df.loc[valid, "icac_mean"]  # secondary line
     ltv_k = df.loc[valid, "ltv_mean"] / 1_000  # use $K not $M
 
     centers, widths, counts = _spend_histogram(spend_df, spend_col, x_max=float(x.max()))
@@ -337,17 +347,26 @@ def fig_icac_saturation(df: pd.DataFrame, median_spend: float,
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=x, y=lo, mode="lines", line=dict(width=0),
-        fill="tonexty", fillcolor=BLUE_FILL, name="95% CI", hoverinfo="skip",
+        fill="tonexty", fillcolor=BLUE_FILL, name="95% HDI (marginal)", hoverinfo="skip",
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=x, y=m, mode="lines", line=dict(color=BLUE, width=2.5),
-        name="Posterior median iCAC",
+        name="Marginal iCAC (posterior)",
         hovertemplate=(
             "Spend: $%{x:,.0f}<br>"
-            "iCAC: $%{y:,.0f}<br>"
+            "Marginal iCAC: $%{y:,.0f}<br>"
             "<extra></extra>"
         ),
         customdata=ltv_k,
+    ), secondary_y=False)
+    fig.add_trace(go.Scatter(
+        x=x, y=avg, mode="lines", line=dict(color="rgba(37,99,235,0.45)", width=1.5),
+        name="Average iCAC",
+        hovertemplate=(
+            "Spend: $%{x:,.0f}<br>"
+            "Average iCAC: $%{y:,.0f}<br>"
+            "<extra></extra>"
+        ),
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=x, y=ltv_k, mode="lines",
@@ -402,11 +421,21 @@ def fig_iroas_saturation(df: pd.DataFrame, median_spend: float,
     observed_max = float(spend_df[spend_col].max()) if (spend_df is not None and not spend_df.empty) else float(df["spend"].max())
     x_cap = observed_max * 1.15
 
-    valid = df["iroas_mean"].notna() & (df["spend"] <= x_cap)
+    # Primary = MARGINAL iROAS (return on the next dollar); secondary = AVERAGE
+    # iROAS (return over all spend). Fall back to average if a pre-marginal CSV is loaded.
+    has_marg = "iroas_marginal_mean" in df.columns
+    prim_col = "iroas_marginal_mean" if has_marg else "iroas_mean"
+    valid = df[prim_col].notna() & (df["spend"] <= x_cap)
     x   = df.loc[valid, "spend"]
-    m   = df.loc[valid, "iroas_mean"]
-    lo  = df.loc[valid, "iroas_lo95"]
-    hi  = df.loc[valid, "iroas_hi95"]
+    if has_marg:
+        m   = df.loc[valid, "iroas_marginal_mean"]
+        lo  = df.loc[valid, "iroas_marginal_lo95"]
+        hi  = df.loc[valid, "iroas_marginal_hi95"]
+    else:
+        m   = df.loc[valid, "iroas_mean"]
+        lo  = df.loc[valid, "iroas_lo95"]
+        hi  = df.loc[valid, "iroas_hi95"]
+    avg = df.loc[valid, "iroas_mean"]  # secondary line
     ltv_k = df.loc[valid, "ltv_mean"] / 1_000
 
     centers, widths, counts = _spend_histogram(spend_df, spend_col, x_max=float(x.max()))
@@ -425,18 +454,27 @@ def fig_iroas_saturation(df: pd.DataFrame, median_spend: float,
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=x, y=lo, mode="lines", line=dict(width=0),
-        fill="tonexty", fillcolor=ORANGE_FILL, name="95% CI", hoverinfo="skip",
+        fill="tonexty", fillcolor=ORANGE_FILL, name="95% HDI (marginal)", hoverinfo="skip",
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=x, y=m, mode="lines", line=dict(color=ORANGE, width=2.5),
-        name="Posterior median iROAS",
+        name="Marginal iROAS (posterior)",
         hovertemplate=(
             "Spend: $%{x:,.0f}<br>"
-            "iROAS: %{y:.3f}x<br>"
+            "Marginal iROAS: %{y:.3f}x<br>"
             "Expected LTV: $%{customdata:,.0f}K<br>"
             "<extra></extra>"
         ),
         customdata=ltv_k,
+    ), secondary_y=False)
+    fig.add_trace(go.Scatter(
+        x=x, y=avg, mode="lines", line=dict(color="rgba(234,88,12,0.45)", width=1.5),
+        name="Average iROAS",
+        hovertemplate=(
+            "Spend: $%{x:,.0f}<br>"
+            "Average iROAS: %{y:.3f}x<br>"
+            "<extra></extra>"
+        ),
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=x, y=ltv_k, mode="lines",
