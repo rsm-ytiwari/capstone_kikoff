@@ -15,8 +15,8 @@ only by loosening the discipline that ties the model to your incrementality test
 trade comes at a real cost to out-of-time accuracy and to the per-channel numbers you care
 about. The honest picture is a **trade-off between two defensible endpoints**, and our
 recommendation is to stay on the incrementality-faithful end while reading the baseline
-correctly: most of it is genuine organic demand plus view-through credit that spend-only data
-cannot recover.
+correctly: most of it is genuine organic demand plus paid credit the spend-only model cannot
+place on a specific channel.
 
 ---
 
@@ -87,8 +87,9 @@ deliverable than a 67% baseline that predicts well and keeps the channels honest
   far down as the blended-efficiency approach can honestly reach.
 - **41% is still above genuine organic demand (~35%).** So the lower number is not "organic
   explained away." Reaching the ~35% range you've seen elsewhere is achievable — but on a **richer
-  input set than we have here.** A model that ingests view-through and attributed-revenue signals
-  can place that credit on the paid channels directly; a model that sees only spend cannot, so on
+  input set than we have here.** A model fed channel-level impressions and reach, plus dated
+  product and pricing events, can place that credit on the paid channels directly; a model that
+  sees only spend cannot, so on
   spend-only data the incrementality-faithful floor lands at ~66–67%. The gap to 35% is a
   difference in **what the model can see**, not a difference in rigor — we're not in a position to
   judge another model's number, and we won't guess at it.
@@ -104,22 +105,20 @@ The two-thirds (~67%) baseline decomposes into two understandable pieces:
   universe is roughly two-thirds of total LTV, leaving about a third as organic. It is a real
   floor, and it is not recoverable by any model that only sees paid spend.
 - **The remaining ~32 points is missed paid attribution** — credit the spend-only model cannot
-  place on a channel, so it lands in the baseline instead. A **meaningful share** of this is
-  **Meta Web view-through**: Meta Web carries disproportionate view-through credit at Kikoff (when
-  its spend pulls back, blended performance degrades within a week), and that credit is invisible
-  to a model that sees spend but not the downstream view-through conversions it drives. We can see
-  this directly in the diagnostics — when we tightened Meta Web's calibration, the change pulled
-  its *efficiency level* into range but did **not** move *where* the model assigned its credit,
-  which is the signature of view-through the data can't capture. The rest of the 32 points sits in
-  channels that are under-instrumented — lift-tested less heavily, or not at all — where the model
-  has weaker information to attribute against. We're deliberately **not** claiming Meta Web alone
-  explains most of the gap; it is a real and identifiable piece, with the remainder spread across
-  these under-measured channels.
+  place on a specific channel, so it lands in the baseline instead. This credit is spread across
+  channels that are under-instrumented, lift-tested less heavily or not at all, where the model
+  has weaker information to attribute against. Several mechanisms contribute, including activity
+  the spend-only inputs simply cannot resolve to a channel. One identifiable example shows up in
+  the diagnostics: when we tightened Meta Web's calibration, the change pulled its *efficiency
+  level* into range but did **not** move *where* the model assigned its credit, the signature of
+  effect that spend-only data cannot place. We are deliberately **not** naming a single channel as
+  the explanation; the model is built to capture these effects in aggregate, and the missing piece
+  is the data that would let it split that credit across channels.
 
 Put on a like-for-like footing against your attributed-revenue universe, the baseline is closer
 to a **45–57% range**. The gap to a 30–40% target is therefore a **data-scope ceiling** — it
-would require an attributed-revenue/view-through feed to close — **not** a modeling defect we
-can tune away.
+would require richer inputs to close, channel-level impressions and reach plus dated product and
+pricing events — **not** a modeling defect we can tune away.
 
 ---
 
@@ -139,11 +138,12 @@ which channels to lean into or pull back from.
    and decisioning page). It honors your incrementality tests, predicts held-out weeks well,
    and keeps Meta Web and CTV in their tested ranges.
 2. **Read the ~two-thirds baseline correctly:** roughly half is genuine organic demand, and
-   most of the remainder is Meta Web view-through that spend-only data cannot capture. It is a
+   the remainder is paid credit that spend-only data cannot place on a specific channel. It is a
    data-scope ceiling, corroborated by a second independent engine — not a tuning failure.
 3. **Treat the 41% figure as a documented option with a price**, not a target to chase. We can
    produce it on request, with the accuracy and calibration costs stated above made explicit.
 
-We would value your steer on one point: whether to invest, in a future iteration, in an
-attributed-revenue / view-through feed that would let the model recover the Meta Web credit
-currently sitting in the baseline. That is the single change that would move the floor.
+We would value your steer on one point: whether to invest, in a future iteration, in richer
+inputs — channel-level impressions and reach, plus dated product and pricing events — that would
+let the model split the credit currently sitting in the baseline across the paid channels. That
+is the single change that would move the floor.

@@ -19,6 +19,7 @@ OUT_P1_OTHERS = OUT / "P1_03_others"
 OUT_P2_PYMC = OUT / "P2_01_pymc"      # legacy — broken ICAC run, kept as reference
 OUT_P2_03 = OUT / "P2_03_mmm_meta_poc"  # active — Meta POC with lift test integration
 OUT_P2_04 = OUT / "P2_04_full_channel"   # M3 — full-channel model, all channels, weekly rollup
+OUT_P2_09 = OUT / "P2_09_ranking"        # P2.09 — post-hoc channel rank-ordering (marginal iCAC/iROAS)
 
 # Create all output subdirs on import
 for _d in [
@@ -38,5 +39,6 @@ for _d in [
     OUT_P2_04 / "tables",
     OUT_P2_04 / "metrics",
     OUT_P2_04 / "traces",
+    OUT_P2_09 / "metrics",
 ]:
     _d.mkdir(parents=True, exist_ok=True)

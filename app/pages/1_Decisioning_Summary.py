@@ -8,8 +8,8 @@ Columns:
   C · Cost/Customer + Trend windowed (tested) or aggregate (untested) + 5wk/26wk trend
   D · Return + Trend        baseline iROAS + 5wk/26wk trend + % below break-even
   E · Confidence (Trust)    HIGH / CAUTION / LOW
-  F · Saturation Read       Past sat / Approaching / Headroom (average-cost basis;
-                            see note under the table re: marginal vs average)
+  F · Saturation Read       Past sat / Approaching / Headroom (next-dollar basis,
+                            consistent with the Channel Ranking page)
   G · Recommended Action    default "Hold pending guardrails or incrementality proof"
   H · Spend Move to Test    "Review pending" placeholder (not a final recommendation)
 
@@ -47,6 +47,15 @@ st.caption(
     "conversion-model accuracy is on the Out-of-Time page. "
     "Column G default: *Hold on to any changes unless documents and guardrails are in place or proved by incrementality.*"
 )
+st.info(
+    "**Read the relative order, not the exact dollars.** Under the current model the unattributed "
+    "baseline sits at about 67%, so the absolute cost and return figures carry a known upward bias. "
+    "Bringing that baseline down so more of it is attributed to the channels is a goal for the next "
+    "iteration of the model, not something this version delivers. As that work continues some of the "
+    "baseline may redistribute across channels, which would move the magnitudes but not the ranking. "
+    "The decision signal is the relative channel order, shown on the Channel Ranking page; treat the "
+    "numbers below as directional."
+)
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -59,25 +68,27 @@ def _spend_signal(share_pct: float) -> str:
 
 
 def _saturation_read(icac_sat_df: pd.DataFrame, median_spend: float, observed_max: float) -> str:
-    """Compare median iCAC at observed_max vs at median_spend; flag the slope.
+    """Compare next-dollar cost at observed_max vs at median_spend; flag the slope.
 
-    Past saturation if iCAC at obs-max is > 1.5× iCAC at median spend.
-    Approaching saturation between 1.2× and 1.5×.
-    Headroom below 1.2×.
+    Uses the marginal (next-dollar) iCAC curve, consistent with the Channel
+    Ranking page. Past saturation if the next-dollar cost at obs-max is > 1.5x
+    the next-dollar cost at typical spend; Approaching between 1.2x and 1.5x;
+    Headroom below 1.2x.
     """
     if icac_sat_df.empty or median_spend <= 0 or observed_max <= 0:
         return "Insufficient data"
-    # Nearest-spend lookup
+    col = "icac_marginal_mean" if "icac_marginal_mean" in icac_sat_df.columns else "icac_mean"
+    # Nearest-spend lookup on the marginal curve.
     def _nearest_icac(target: float) -> float:
         diffs = (icac_sat_df["spend"] - target).abs()
         idx = diffs.idxmin()
-        return float(icac_sat_df.loc[idx, "icac_mean"])
+        return float(icac_sat_df.loc[idx, col])
     icac_at_median = _nearest_icac(median_spend)
     icac_at_max    = _nearest_icac(observed_max)
     if not (np.isfinite(icac_at_median) and np.isfinite(icac_at_max) and icac_at_median > 0):
         return "Insufficient data"
     ratio = icac_at_max / icac_at_median
-    if ratio > 1.5:  return f"Past saturation (×{ratio:.1f} avg cost at peak vs typical spend)"
+    if ratio > 1.5:  return f"Past saturation (×{ratio:.1f} next-dollar cost at peak vs typical spend)"
     if ratio > 1.2:  return f"Approaching saturation (×{ratio:.1f})"
     return f"Headroom (×{ratio:.2f}, near-linear)"
 
@@ -170,7 +181,7 @@ for ch in CHANNELS_AVAILABLE:
         "C · Cost/Customer (iCAC) + Trend":     c_str,
         "D · Return (iROAS) + Trend":           d_str,
         "E · Confidence (Trust)":               conf,
-        "F · Saturation Read (avg-cost basis)": sat,
+        "F · Saturation Read (next-dollar basis)": sat,
         "G · Recommended Action":               "Hold pending guardrails or incrementality proof",
         "H · Spend Move to Test":               "Review pending",
     })
@@ -189,15 +200,15 @@ st.dataframe(
         "C · Cost/Customer (iCAC) + Trend":     st.column_config.TextColumn(width="large"),
         "D · Return (iROAS) + Trend":           st.column_config.TextColumn(width="large"),
         "E · Confidence (Trust)":               st.column_config.TextColumn(width="medium"),
-        "F · Saturation Read (avg-cost basis)": st.column_config.TextColumn(width="medium"),
+        "F · Saturation Read (next-dollar basis)": st.column_config.TextColumn(width="medium"),
         "G · Recommended Action":               st.column_config.TextColumn(width="medium"),
         "H · Spend Move to Test":               st.column_config.TextColumn(width="small"),
     },
 )
 st.caption(
-    "**Column F basis:** this reading uses **average** cost per customer across spend levels. "
-    "The per-channel saturation curves on the main dashboard show the **next-dollar (marginal)** "
-    "view, which can read as more saturated. Treat Column F as a directional, average-cost flag."
+    "**Column F basis:** this reading uses the **next-dollar (marginal)** cost per customer, "
+    "the same basis as the per-channel saturation curves on the main dashboard and the Channel "
+    "Ranking page. A higher multiple means added budget is closer to running out of room."
 )
 
 # ── CSV export ───────────────────────────────────────────────────────────────

@@ -19,6 +19,7 @@ import streamlit as st
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _CHART_DIR  = _REPO_ROOT / "outputs" / "P2_04_full_channel" / "charts"
 _METRIC_DIR = _REPO_ROOT / "outputs" / "P2_04_full_channel" / "metrics"
+_RANK_DIR   = _REPO_ROOT / "outputs" / "P2_09_ranking" / "metrics"
 
 CUTOFF_DATE = "2026-03-31"  # D003 modeling cutoff (Q29 defense in depth)
 CANONICAL_VERSION = "M3.5b_fix_a_2026-05-19"
@@ -136,6 +137,18 @@ def load_icac_saturation(channel: str = "meta_web") -> pd.DataFrame:
 @st.cache_data(ttl=300)
 def load_iroas_saturation(channel: str = "meta_web") -> pd.DataFrame:
     return pd.read_csv(_CHART_DIR / f"{channel}_iroas_saturation.csv")
+
+
+@st.cache_data(ttl=300)
+def load_channel_ranking() -> pd.DataFrame:
+    """Channel rank-ordering by marginal iCAC + marginal iROAS (P2.09).
+
+    Produced by scripts/24_channel_ranking.py from the existing LTV posterior,
+    evaluated at each channel's recent typical weekly spend (last 26 weeks).
+    Columns: channel, recent_median_spend, marg_icac_point, icac_lo95,
+    icac_hi95, rank_icac, marg_iroas_point, iroas_lo95, iroas_hi95, rank_iroas.
+    """
+    return pd.read_csv(_RANK_DIR / "channel_ranking.csv")
 
 
 @st.cache_data(ttl=300)
