@@ -56,3 +56,4 @@ _cache/
 # Dashboard chart outputs (tracked for Streamlit — override *.csv rule above)
 !outputs/P2_04_full_channel/charts/*.csv
 !outputs/P2_04_full_channel/charts/*.json
+!outputs/P2_09_ranking/metrics/*.csv
